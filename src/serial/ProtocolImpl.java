@@ -1,6 +1,5 @@
-package serialterminal;
-
-import serialterminal.ui.SerialTerminal;
+/* Referred from http://www.kuligowski.pl/java/rs232-in-java-for-windows,1 */
+package serial;
 
 public class ProtocolImpl implements Protocol {
 
@@ -39,7 +38,7 @@ public class ProtocolImpl implements Protocol {
             }
 
             /* Show this message to stdinTextArea */
-            SerialTerminal.getFrame().mTerminalPanel.appendText(message);
+            //SPTerminal.getFrame().mTerminalPanel.appendText(message);
 
             tail = 0;
         }

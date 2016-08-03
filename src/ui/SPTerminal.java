@@ -1,6 +1,6 @@
-package serialterminal.ui;
+package ui;
 
-import serialterminal.SerialTerminal2;
+import serial.SerialTest;
 
 import javax.swing.*;
 import java.awt.*;
@@ -12,7 +12,7 @@ import java.lang.reflect.InvocationTargetException;
 /**
  * Main class for SerialTerminalTest
  */
-public class SerialTerminal extends JFrame {
+public class SPTerminal extends JFrame {
 
     // lafClassName to use
     public static final String WINDOWS_STYLE = "com.sun.java.swing.plaf.windows.WindowsLookAndFeel";
@@ -24,7 +24,7 @@ public class SerialTerminal extends JFrame {
     // ----- Relations -------
 
     // ----- Attributes -------
-    private static SerialTerminal frame;
+    private static SPTerminal frame;
 
       // Center
     private JTabbedPane mCenterTabbedPane;
@@ -57,7 +57,7 @@ public class SerialTerminal extends JFrame {
             }
         });
 
-        new SerialTerminal2().initialize();
+        new SerialTest().initialize();
     }
 
 
@@ -67,7 +67,7 @@ public class SerialTerminal extends JFrame {
      */
     private static void createGUIDoFirst() {
         //final Debugger frame = new Debugger();
-        frame = new SerialTerminal();
+        frame = new SPTerminal();
 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         // Finalization callback at EXIT timing
@@ -98,7 +98,7 @@ public class SerialTerminal extends JFrame {
     }
 
 
-    private SerialTerminal() {
+    private SPTerminal() {
         try{
             UIManager.setLookAndFeel(WINDOWS_STYLE);
             //SwingUtilities.updateComponentTreeUI(this);
@@ -119,7 +119,7 @@ public class SerialTerminal extends JFrame {
         getContentPane().add(mCenterTabbedPane, BorderLayout.CENTER);
     }
 
-    public static SerialTerminal getFrame() {
+    public static SPTerminal getFrame() {
         return frame;
     }
 }

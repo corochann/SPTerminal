@@ -1,4 +1,5 @@
-package serialterminal;
+/* Referred from http://www.kuligowski.pl/java/rs232-in-java-for-windows,1 */
+package serial;
 
 import purejavacomm.CommPortIdentifier;
 import purejavacomm.SerialPort;
@@ -12,7 +13,7 @@ import java.util.Enumeration;
 /**
  *
  */
-public class SerialTerminal2 implements SerialPortEventListener {
+public class SerialTest implements SerialPortEventListener {
     SerialPort port = null;
 
     private String appName = getClass().getName();
@@ -25,13 +26,13 @@ public class SerialTerminal2 implements SerialPortEventListener {
 //        "usbdev", // Linux
 //        "tty", // Linux
 //        "serial", // Linux
-          "COM12", // Windows
+          "COM1", // Windows
     };
 
     public static void main(String[] args) {
         //ArduinoJavaComms lightSensor = new ArduinoJavaComms();
         //lightSensor.initialize();
-        new SerialTerminal2().initialize();
+        new SerialTest().initialize();
     }
 
     public void initialize() {
@@ -49,7 +50,7 @@ public class SerialTerminal2 implements SerialPortEventListener {
                 for ( String portName: PORT_NAMES ) {
                     if ( portid.getName().equals(portName)
                             || portid.getName().contains(portName)) {  // CONTAINS
-                        port = (SerialPort) portid.open("SerialTerminal2", TIME_OUT);
+                        port = (SerialPort) portid.open("SerialTest", TIME_OUT);
 
                         /* setup connection parameters */
                         port.setSerialPortParams(115200, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);

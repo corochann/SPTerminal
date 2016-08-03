@@ -1,7 +1,7 @@
-package serialterminal.ui;
+package ui;
 
-import serialterminal.CommPortSender;
-import serialterminal.ProtocolImpl;
+import serial.CommPortSender;
+import serial.ProtocolImpl;
 
 import javax.swing.*;
 import java.awt.*;
