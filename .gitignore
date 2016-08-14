@@ -4,7 +4,7 @@
 .mtj.tmp/
 
 # Package Files #
-*.jar
+# *.jar
 *.war
 *.ear
 
@@ -13,3 +13,6 @@ hs_err_pid*
 
 .idea/*
 SPTerminal.iml
+cache/
+out/
+src/META-INF/MANIFEST.MF

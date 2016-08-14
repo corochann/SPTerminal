@@ -21,3 +21,43 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+---------------------
+
+Third-Party Software Licenses
+
+This section contains third-party software notices and/or additional
+terms for licensed third-party software components included within SPTerminal.
+
+1. Java Native Access
+
+Java Native Access project (JNA) is dual-licensed under 2
+alternative Open Source/Free licenses: LGPL 2.1 and
+Apache License 2.0. (starting with JNA version 4.0.0).
+
+You can freely decide which license you want to apply to
+the project.
+
+You may obtain a copy of the LGPL License at:
+
+http://www.gnu.org/licenses/licenses.html
+
+A copy is also included in the downloadable source code package
+containing JNA, in file "LGPL2.1", under the same directory
+as this file.
+
+You may obtain a copy of the Apache License at:
+
+http://www.apache.org/licenses/
+
+A copy is also included in the downloadable source code package
+containing JNA, in file "AL2.0", under the same directory
+as this file.
+
+2. PureJavaComm
+
+The code is Copyrighted by nyholku and is licensed under "Simplified BSD License".
+
+You may obtain a copy of the Simplified BSD License at:
+
+http://www.opensource.org/licenses/BSD-3-Clause
