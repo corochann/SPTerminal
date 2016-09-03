@@ -1,0 +1,32 @@
+group 'com.corochann'
+version '0.01'  // build version
+
+apply plugin: 'java'
+apply plugin: 'application'
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+mainClassName = 'com.corochann.spterminal.ui.SPTerminal'
+
+/* Setting encoding */
+def defaultEncoding = 'UTF-8'
+tasks.withType(AbstractCompile)*.options*.encoding = defaultEncoding
+tasks.withType(GroovyCompile)*.groovyOptions*.encoding = defaultEncoding
+
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile fileTree(dir: 'lib', include: '*.jar')
+    compile 'net.java.dev.jna:jna-platform:4.1.0'
+    testCompile 'junit:junit:4.11'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.corochann.spterminal.ui.SPTerminal'
+    }
+}

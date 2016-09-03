@@ -16,3 +16,16 @@ SPTerminal.iml
 cache/
 out/
 src/META-INF/MANIFEST.MF
+userfile/SerialPortConfig.xml
+userfile/LogConfig.xml
+userfile/StyleConfigSelector.xml
+log/
+.gradle/
+gradlew
+gradlew.bat
+gradle.properties
+gradle/wrapper/gradle-wrapper.jar
+gradle/wrapper/gradle-wrapper.properties
+build/
+userfile/alias/
+userfile/ttl/
