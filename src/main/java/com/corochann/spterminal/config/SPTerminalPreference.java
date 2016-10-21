@@ -20,6 +20,7 @@ public class SPTerminalPreference {
     private LogConfig mLogConfig = null;
     private StyleSelectorConfig mStyleSelectorConfig = null;
     private TTLMacroConfig mTTLMacroConfig = null;
+    private FilterConfig mFilterConfig = null;
 
     private SPTerminalPreference() {
 
@@ -60,6 +61,10 @@ public class SPTerminalPreference {
         return mTTLMacroConfig;
     }
 
+    public FilterConfig getFilterConfig() {
+        return mFilterConfig;
+    }
+
     /**
      * Loads all preferences (specified in Attributes).
      */
@@ -68,6 +73,7 @@ public class SPTerminalPreference {
         mLogConfig = LogConfig.load();
         mStyleSelectorConfig = StyleSelectorConfig.load();
         mTTLMacroConfig = TTLMacroConfig.load();
+        mFilterConfig = FilterConfig.load();
     }
 
     /**
@@ -77,6 +83,7 @@ public class SPTerminalPreference {
         mSerialPortConfig.save();
         mLogConfig.save();
         mStyleSelectorConfig.save();
-        // mSPTAliasListConfig save is done by each SPTAlias independently
+        // mTTLMacroConfig save is done by each TTLMacro independently
+        // mFilterConfig save is done by each FilterRule independently
     }
 }

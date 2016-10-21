@@ -75,7 +75,7 @@ public class TTLMacroConfigDialog extends JDialog implements ActionListener {
         selectPanel.add(ttlListSP);
 
         /* 2nd row: edit panel
-         * Alias can be editted here.
+         * TTL can be edited here.
          */
         JPanel ttlEditPanel = new JPanel();
         ttlEditPanel.setLayout((new BoxLayout(ttlEditPanel, BoxLayout.Y_AXIS)));
@@ -136,12 +136,11 @@ public class TTLMacroConfigDialog extends JDialog implements ActionListener {
         Vector<String> listData = new Vector<>();
         for (Map.Entry<String, String> e : ttlMacroConfig.ttlMacroMap.entrySet()) {
             String fileNameKey = e.getKey();
-            //TODO: no sorting for now
             listData.add(fileNameKey);
         }
         Collections.sort(listData);
 
-        // First data is to add new SPT Alias
+        // First data is to add new TTL macro
         listData.add(0, ADD_NEW);
         return listData;
     }
@@ -153,7 +152,7 @@ public class TTLMacroConfigDialog extends JDialog implements ActionListener {
         switch (action) {
             case ACTION_OK:
                 System.out.println("Ok pressed: " + ttlList.getSelectedValue());
-                // Save alias
+                // Save ttl
                 ttlFileNameKey = (String) ttlList.getSelectedValue();
                 if (ttlFileNameKey.equals(ADD_NEW)) {
                     TTLMacro ttlMacro = new TTLMacro();

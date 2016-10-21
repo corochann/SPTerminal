@@ -14,6 +14,7 @@ public class SPTMenuBar extends JMenuBar implements ActionListener {
 
     /* Action definitions */
     public static final String ACTION_EDIT_CLEARSCREEN = "clearscreen";
+    public static final String ACTION_EDIT_FIND = "find";
     public static final String ACTION_SETUP_SERIALPORT = "setupserialport";
     public static final String ACTION_SETUP_LOG = "setuplog";
     public static final String ACTION_SETUP_STYLE = "setupstyle";
@@ -34,7 +35,14 @@ public class SPTMenuBar extends JMenuBar implements ActionListener {
         clearScreen.addActionListener(this);
         clearScreen.setActionCommand(ACTION_EDIT_CLEARSCREEN);
 
+          /* find */
+        JMenuItem find = new JMenuItem("Find");
+        find.setMnemonic(KeyEvent.VK_F);
+        find.addActionListener(this);
+        find.setActionCommand(ACTION_EDIT_FIND);
+
         editMenu.add(clearScreen);
+        editMenu.add(find);
 
         /* MENU: Setup */
         JMenu setupMenu = new JMenu("Setup");
@@ -42,7 +50,7 @@ public class SPTMenuBar extends JMenuBar implements ActionListener {
 
           /* style */
         JMenuItem styleSetup = new JMenuItem("Style");
-        styleSetup.setMnemonic(KeyEvent.VK_T);
+        styleSetup.setMnemonic(KeyEvent.VK_Y);
         styleSetup.addActionListener(this);
         styleSetup.setActionCommand(ACTION_SETUP_STYLE);
 
@@ -64,10 +72,10 @@ public class SPTMenuBar extends JMenuBar implements ActionListener {
 
         /* MENU: Tools */
         JMenu toolsMenu = new JMenu("Tools");
-        toolsMenu.setMnemonic(KeyEvent.VK_T);
+        toolsMenu.setMnemonic(KeyEvent.VK_O);
           /* ttl macro */
         JMenuItem ttlMacroSetup = new JMenuItem("Teraterm macro");
-        ttlMacroSetup.setMnemonic(KeyEvent.VK_T);
+        ttlMacroSetup.setMnemonic(KeyEvent.VK_M);
         ttlMacroSetup.addActionListener(this);
         ttlMacroSetup.setActionCommand(ACTION_TTLMACRO);
 
@@ -96,6 +104,9 @@ public class SPTMenuBar extends JMenuBar implements ActionListener {
         switch (action) {
             case ACTION_EDIT_CLEARSCREEN:
                 frame.mTerminalPanel.clearRXScreen();
+                break;
+            case ACTION_EDIT_FIND:
+                frame.mTerminalPanel.startFind();
                 break;
             case ACTION_SETUP_STYLE:
                 StyleConfigDialog styleConfigDialog = new StyleConfigDialog(frame);

@@ -8,9 +8,7 @@ import com.corochann.spterminal.ui.menu.TTLMacroConfigDialog;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 
 /**
  * Multiline Command confirm dialog
@@ -32,6 +30,9 @@ public class MultilineCommandConfirmDialog extends JDialog implements ActionList
 
     private String commandsText = "";
     private int option = OPTION_CANCEL;
+    private final CustomJButton okButton;
+    private final CustomJButton registerButton;
+    private final CustomJButton cancelButton;
 
     public MultilineCommandConfirmDialog(Frame owner, String pasteText) {
         super(owner, ModalityType.APPLICATION_MODAL);
@@ -63,15 +64,20 @@ public class MultilineCommandConfirmDialog extends JDialog implements ActionList
         /* 3rd row: form button */
         JPanel formButtonPanel = new JPanel();
         formButtonPanel.setLayout(new BoxLayout(formButtonPanel, BoxLayout.X_AXIS));
-        CustomJButton okButton = new CustomJButton("Ok", styleSelectorConfig.getStyleConfig());
+        okButton = new CustomJButton("Ok", styleSelectorConfig.getStyleConfig());
         okButton.setActionCommand(ACTION_OK);
         okButton.addActionListener(this);
-        CustomJButton registerButton = new CustomJButton("Register", styleSelectorConfig.getStyleConfig());
+        okButton.setToolTipText("Execute command. Enter key works for shortcut.");
+
+        registerButton = new CustomJButton("Register", styleSelectorConfig.getStyleConfig());
         registerButton.setActionCommand(ACTION_REGISTER);
         registerButton.addActionListener(this);
-        CustomJButton cancelButton = new CustomJButton("Cancel", styleSelectorConfig.getStyleConfig());
+        registerButton.setToolTipText("Register command to TTL Macro. r key works for shortcut.");
+
+        cancelButton = new CustomJButton("Cancel", styleSelectorConfig.getStyleConfig());
         cancelButton.setActionCommand(ACTION_CANCEL);
         cancelButton.addActionListener(this);
+        cancelButton.setToolTipText("Cancel to execute command and exit. ESC key works for shortcut.");
         formButtonPanel.add(okButton);
         formButtonPanel.add(registerButton);
         formButtonPanel.add(cancelButton);
@@ -80,8 +86,44 @@ public class MultilineCommandConfirmDialog extends JDialog implements ActionList
         mainPanel.add(multilineCommandPanel);
         mainPanel.add(formButtonPanel);
 
+        /* setFocusable & requestFocusInWindow is necessary for addKeyListener to work */
+        setFocusable(true);
+        requestFocusInWindow();
+        addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+                System.out.println("[DEBUG] MultilineCommandConfirmDialog keyPressed: " + e.getKeyCode());
+                //super.keyPressed(e);
+                switch (e.getKeyCode()) {
+                    case KeyEvent.VK_ENTER:
+                        okButton.doClick();
+                        break;
+                    case KeyEvent.VK_R:
+                        registerButton.doClick();
+                        break;
+                    case KeyEvent.VK_ESCAPE:
+                        cancelButton.doClick();
+                        break;
+                    default:
+                }
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+            }
+        });
+
         this.getContentPane().add(mainPanel);
         this.pack();
+    }
+
+    public void showDialog() {
+        setLocationRelativeTo(getOwner());
+        setVisible(true);
     }
 
     @Override

@@ -1,5 +1,5 @@
 group 'com.corochann'
-version '0.03'  // build version
+version '0.04'  // build version
 
 apply plugin: 'java'
 apply plugin: 'application'
@@ -23,5 +23,19 @@ dependencies {
     compile fileTree(dir: 'lib', include: '*.jar')
     compile 'net.java.dev.jna:jna-platform:4.1.0'
     testCompile 'junit:junit:4.11'
+}
+
+task copyLicense {
+    outputs.file new File("$buildDir/LICENSE")
+    doLast {
+        copy {
+            from "LICENSE"
+            into "$buildDir"
+        }
+    }
+}
+
+applicationDistribution.from(copyLicense) {
+    into ""
 }
 

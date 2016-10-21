@@ -16,10 +16,7 @@ import javax.swing.*;
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.FontUIResource;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Vector;
 
@@ -46,12 +43,14 @@ public class SPTerminal extends JFrame implements ActionListener {
     public static final int STATE_CONNECTED  = 2;
     public static final String ACTION_REFRESH = "refresh";
 
-    // ----- Relations -------
+    private int connectionState;
+
+    /*-- Relations ---*/
     private MyLogger mLogger = null;
     private MyAnsiLogger mAnsiLogger = null;
     private static SPTerminalPreference mPreference;
 
-    // ----- Attributes -------
+    /*--- Attributes ---*/
     private static SPTerminal frame;
 
       // Top
@@ -62,12 +61,6 @@ public class SPTerminal extends JFrame implements ActionListener {
     private static SerialPortManager serialPortManager;
     private final CustomJButton mConnectButton;
     private final CustomJButton mRefreshButton;
-
-    public static SerialPortManager getSerialPortManager() {
-        return serialPortManager;
-    }
-
-    private int connectionState;
 
     public static void main(String[] args) {
         initialSetup();
@@ -177,52 +170,75 @@ public class SPTerminal extends JFrame implements ActionListener {
         if (styleConfig.getBaseBackGroundColor() != null) {
             ColorUIResource bgColor = new ColorUIResource(styleConfig.getBaseBackGroundColor());
             //uiDefaults.put("Viewport.background", bgColor); // no effect
-            uiDefaults.put("Panel.background", bgColor);
-            uiDefaults.put("TextField.background", bgColor);
-            uiDefaults.put("TextArea.background", bgColor);
-            uiDefaults.put("TextPane.background", bgColor);
-            uiDefaults.put("Label.background", bgColor);
             // button have many types, ex JButton, JScrollPane's up/down button,,,
             // it is difficult to set default value, specify for each component instead.
             //uiDefaults.put("Button.background", bgColor);
             uiDefaults.put("CheckBox.background", bgColor);
-            uiDefaults.put("TabbedPane.background", bgColor);
+            uiDefaults.put("ComboBox.background", bgColor);
+            uiDefaults.put("Desktop.background", bgColor);
+            uiDefaults.put("Label.background", bgColor);
+            uiDefaults.put("List.background", bgColor);
             uiDefaults.put("OptionPane.background", bgColor);
+            uiDefaults.put("Panel.background", bgColor);
+            uiDefaults.put("ScrollPane.background", bgColor);
+            uiDefaults.put("SplitPane.background", bgColor);
+            uiDefaults.put("TabbedPane.background", bgColor);
+            uiDefaults.put("Table.background", bgColor);
+            uiDefaults.put("TableHeader.background", bgColor);
+            uiDefaults.put("TextField.background", bgColor);
+            uiDefaults.put("TextArea.background", bgColor);
+            uiDefaults.put("TextPane.background", bgColor);
+            uiDefaults.put("Viewport.background", bgColor);
         }
         if (styleConfig.getBaseForeGroundColor() != null) {
             ColorUIResource fgColor = new ColorUIResource(styleConfig.getBaseForeGroundColor());
-            //uiDefaults.put("Viewport.foreground", fgColor); // no effect
+            uiDefaults.put("Button.foreground", fgColor);
+            uiDefaults.put("CheckBox.foreground", fgColor);
+            uiDefaults.put("ComboBox.foreground", fgColor);
+            uiDefaults.put("Label.foreground", fgColor);
+            uiDefaults.put("List.foreground", fgColor);
+            uiDefaults.put("OptionPane.foreground", fgColor);
+            uiDefaults.put("OptionPane.messageForeground", fgColor);
             uiDefaults.put("Panel.foreground", fgColor);
+            uiDefaults.put("ScrollPane.foreground", fgColor);
+            //uiDefaults.put("TabbedPane.foreground", fgColor);
+            uiDefaults.put("Table.foreground", fgColor);
+            uiDefaults.put("TableHeader.foreground", fgColor);
             uiDefaults.put("TextField.foreground", fgColor);
             uiDefaults.put("TextField.caretForeground", fgColor);
             uiDefaults.put("TextArea.foreground", fgColor);
             uiDefaults.put("TextArea.caretForeground", fgColor);
             uiDefaults.put("TextPane.foreground", fgColor);
             uiDefaults.put("TextPane.caretForeground", fgColor);
-            uiDefaults.put("Label.foreground", fgColor);
-            uiDefaults.put("Button.foreground", fgColor);
-            uiDefaults.put("CheckBox.foreground", fgColor);
-            uiDefaults.put("OptionPane.foreground", fgColor);
-            uiDefaults.put("OptionPane.messageForeground", fgColor);
-            //uiDefaults.put("TabbedPane.foreground", fgColor);
+            uiDefaults.put("Viewport.foreground", fgColor);
         }
         if (styleConfig.getBaseFont() != null) {
             Font baseFont = new FontUIResource(styleConfig.getBaseFont());
             //uiDefaults.put("Viewport.font", baseFont); // no effect
-            uiDefaults.put("Panel.font", baseFont);
-            uiDefaults.put("TextField.font", baseFont);
-            uiDefaults.put("TextArea.font", baseFont);
-            uiDefaults.put("TextPane.font", baseFont);
-            uiDefaults.put("Label.font", baseFont);
             uiDefaults.put("Button.font", baseFont);
             uiDefaults.put("CheckBox.font", baseFont);
-            uiDefaults.put("TabbedPane.font", baseFont);
+            uiDefaults.put("ComboBox.font", baseFont);
+            uiDefaults.put("Label.font", baseFont);
+            uiDefaults.put("List.font", baseFont);
             uiDefaults.put("Menu.font", baseFont);
             uiDefaults.put("MenuBar.font", baseFont);
             uiDefaults.put("MenuItem.font", baseFont);
             uiDefaults.put("OptionPane.font", baseFont);
+            uiDefaults.put("Panel.font", baseFont);
+            uiDefaults.put("ScrollPane.font", baseFont);
+            uiDefaults.put("TabbedPane.font", baseFont);
+            uiDefaults.put("Table.font", baseFont);
+            uiDefaults.put("TableHeader.font", baseFont);
+            uiDefaults.put("TextField.font", baseFont);
+            uiDefaults.put("TextArea.font", baseFont);
+            uiDefaults.put("TextPane.font", baseFont);
         }
 
+        //uiDefaults.put("Table.gridColor", Color.RED);
+        //uiDefaults.put("Table.dropLineColor", Color.RED);
+        //uiDefaults.put("Table.dropLineShortColor", Color.RED);
+        //uiDefaults.put("Table.focusCellBackground", Color.RED);
+        //uiDefaults.put("Table.selectionBackground", Color.RED);
         //uiDefaults.put("TabbedPane.focus", red);
         //uiDefaults.put("TabbedPane.light", green);
         //uiDefaults.put("Button.shadow", red);
@@ -283,16 +299,34 @@ public class SPTerminal extends JFrame implements ActionListener {
         //mCenterTabbedPane.addTab("terminal", mTerminalPanel);
         //mCenterTabbedPane.setMnemonicAt(0, KeyEvent.VK_R);
         getContentPane().add(mTerminalPanel, BorderLayout.CENTER);
-
         getContentPane().add(topPanel, BorderLayout.NORTH);
 
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                .addKeyEventDispatcher(new GlobalKeyEventDispatcher());
         refreshPortNames();
         updateCurrentConnectionState(STATE_DISCONNECTED);
     }
 
-    /** getInstance() method for this class */
-    public static SPTerminal getFrame() {
-        return frame;
+    /** Handles global shortcut key */
+    private class GlobalKeyEventDispatcher implements KeyEventDispatcher {
+        @Override
+        public boolean dispatchKeyEvent(KeyEvent e) {
+            //System.out.println("[DEBUG] KeyboardFocusManager event.getID: " + e.getID() + ", e.getKeyCode() = " + e.getKeyCode());
+            if (e.getID() == KeyEvent.KEY_PRESSED) {
+                if ((e.getModifiers() & KeyEvent.ALT_MASK) != 0) {
+                    /* CTRL key pressed */
+                    switch (e.getKeyCode()) {
+                        case KeyEvent.VK_F:  // find
+                            mTerminalPanel.startFind();
+                            return true;
+                        case KeyEvent.VK_T:  // type, terminal, txTextField
+                            mTerminalPanel.startType();
+                            return true;
+                    }
+                }
+            }
+            return false;
+        }
     }
 
     @Override
@@ -419,6 +453,14 @@ public class SPTerminal extends JFrame implements ActionListener {
         mTerminalPanel.notifyCurrentConnectionState(state);
     }
 
+    /** getInstance() method for this class */
+    public static SPTerminal getFrame() {
+        return frame;
+    }
+
+    public static SerialPortManager getSerialPortManager() {
+        return serialPortManager;
+    }
 
     public MyLogger getLogger() {
         return mLogger;

@@ -5,6 +5,7 @@ import com.corochann.spterminal.util.MyUtils;
 import org.fusesource.jansi.AnsiOutputStream;
 
 import javax.swing.*;
+import javax.swing.plaf.ColorUIResource;
 import javax.swing.text.BadLocationException;
 import java.awt.*;
 import java.io.IOException;
@@ -12,7 +13,6 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Scanner;
 
 /**
  * Custom {@link JTextPane} class which supports Ansi escape character.
@@ -42,6 +42,14 @@ public class AnsiJTextPane extends HighlightableJTextPane {
         super();
         customAnsiOutputStream = new CustomAnsiOutputStream();
         this.styleConfig = styleConfig;
+        setMonospaceFont(styleConfig.getTerminalFont());
+    }
+
+    public void setMonospaceFont(Font font) {
+        setFont(font);
+        // Terminal default tab size is 8,
+        // It must be invoked after setFont()
+        setTabSize(8);
     }
 
     public void decrementCursorPositionRow() {
@@ -136,7 +144,7 @@ public class AnsiJTextPane extends HighlightableJTextPane {
 
             byte[] b = new byte[bb.remaining()];
             bb.get(b);
-            System.out.println("[Debug] flush " + ", b " + Arrays.toString(b) + ", length = " + b.length);
+            //System.out.println("[Debug] flush" + ", b " + Arrays.toString(b) + ", length = " + b.length);
 
             int offset = 0;
             int len = 0;
@@ -192,10 +200,10 @@ public class AnsiJTextPane extends HighlightableJTextPane {
          * @param str
          */
         private synchronized void flushString(String str) {
-            System.out.println(
-                    "flush str = " + MyUtils.unEscapeString(str)
-                    + ", mCursorPosition = " + mCursorPosition
-            );
+            //System.out.println(
+            //        "[DEBUG] flush str = " + MyUtils.unEscapeString(str)
+            //        + ", mCursorPosition = " + mCursorPosition
+            //);
             if (mCursorPosition == -1) {  // append at the end of text
                 if (mCurrentForeGroundColor == null) {
                     parent.append(str);  // append without specifying color
@@ -246,8 +254,6 @@ public class AnsiJTextPane extends HighlightableJTextPane {
                     System.out.println("flushing substr = " + MyUtils.unEscapeString(subStr));
 
                     try {
-                        // TODO: tmp CM
-                        //mCursorPositionCol = 0;
                         /* NOTE: getLineEndOffset() includes the last "\n",
                          * subtracting 1 means ignoring to replace "\n" at the end of line
                          */
@@ -318,10 +324,10 @@ public class AnsiJTextPane extends HighlightableJTextPane {
         int visibleRow = verticalScrollBar.getVisibleAmount() / getFontMetrics(getFont()).getHeight();
         mViewPortTopRow = Math.max(mViewPortTopRow, mCursorPositionRow - visibleRow + 1);
         if (mViewPortTopRow < 0) mViewPortTopRow = 0;
-        System.out.println("updateViewPortTopRow mViewPortTopRow = " + mViewPortTopRow
-                + ", mCursorPositionRow = " + mCursorPositionRow
-                + ", visibleRow = " + visibleRow
-        );
+        //System.out.println("[DEBUG] updateViewPortTopRow mViewPortTopRow = " + mViewPortTopRow
+        //        + ", mCursorPositionRow = " + mCursorPositionRow
+        //        + ", visibleRow = " + visibleRow
+        //);
     }
 
     /**
@@ -443,8 +449,16 @@ public class AnsiJTextPane extends HighlightableJTextPane {
         @Override
         protected void processNegativeImage() {
             flush();
-            Color foregroundColor = mCurrentForeGroundColor == null ? styleConfig.getBaseForeGroundColor() : mCurrentForeGroundColor;
-            Color backgroundColor = mCurrentBackGroundColor == null ? styleConfig.getBaseBackGroundColor() : mCurrentBackGroundColor;
+            Color foregroundColor = styleConfig.getBaseForeGroundColor();
+            Color backgroundColor = styleConfig.getBaseBackGroundColor();
+            if (foregroundColor == null) {
+                UIDefaults uiDefaults = UIManager.getLookAndFeelDefaults();
+                foregroundColor = (ColorUIResource) uiDefaults.get("TextPane.foreground");
+            }
+            if (backgroundColor == null) {
+                UIDefaults uiDefaults = UIManager.getLookAndFeelDefaults();
+                backgroundColor = (ColorUIResource) uiDefaults.get("TextPane.background");
+            }
             System.out.println("processNegativeImage, original foregroundColor = " + foregroundColor + ", backgroundColor = " + backgroundColor);
             mCurrentForeGroundColor = backgroundColor;
             mCurrentBackGroundColor = foregroundColor;

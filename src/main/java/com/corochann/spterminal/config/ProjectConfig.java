@@ -22,7 +22,7 @@ public class ProjectConfig {
      * [History]
      * version 0.01: first version
      */
-    public static final String VERSION = "0.03";
+    public static final String VERSION = "0.04";
 
 
     // Application manifest
@@ -44,6 +44,8 @@ public class ProjectConfig {
     public static final String STYLE_CONFIG_PATH_PREFIX =  USER_FOLDER + "color/";
     /** The total path for Teraterm macro file (.ttl) should be TTL_PATH_PREFIX/{fileName}.ttl */
     public static final String TTL_PATH_PREFIX =  USER_FOLDER + "ttl/";
+    /** The total path for log filter file (.xml) should be FILTER_PATH_PREFIX/{fileName}.xml */
+    public static final String FILTER_PATH_PREFIX =  USER_FOLDER + "filter/";
 
     /* Assets */
     public static final String PLAY_ICON_PATH = RES_FOLDER + "img/play.png";

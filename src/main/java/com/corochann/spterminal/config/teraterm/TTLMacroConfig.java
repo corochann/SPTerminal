@@ -13,8 +13,11 @@ import java.util.HashMap;
 public class TTLMacroConfig {
 
     public static final String TTL_PREFIX = "[ttl] ";
-    /** list of TTL Macro in vector format */
-    public HashMap<String, String> ttlMacroMap;  // key: abbreviation, value: fileName
+    /**
+     * list of TTL Macro in vector format
+     * key: abbreviation, value: fileName
+     */
+    public HashMap<String, String> ttlMacroMap;
 
     private TTLMacroConfig() {
         ttlMacroMap = new HashMap<>();
@@ -34,7 +37,7 @@ public class TTLMacroConfig {
     }
 
     /*--- Save & Load ---*/
-    // Save is done by each SPTAlias independently
+    // Save is done by each TTLMacro independently
 
     /**
      * load this preference
@@ -47,6 +50,11 @@ public class TTLMacroConfig {
         return ttlMacroConfig;
     }
 
+    /**
+     * Recursively check dir, to find ttl file.
+     * @param dir
+     * @param ttlMacroConfig
+     */
     private static void loadFolder(File dir, TTLMacroConfig ttlMacroConfig) {
         File[] files = dir.listFiles();
         if(files == null) {
@@ -65,6 +73,11 @@ public class TTLMacroConfig {
         }
     }
 
+    /**
+     * Find ttl file and add this ttlMacroMap (It does not load the actual content of file)
+     * @param file
+     * @param ttlMacroConfig
+     */
     private static void loadFile(File file, TTLMacroConfig ttlMacroConfig) {
         String fullFileName = file.getName();
         if(fullFileName.lastIndexOf(".") != -1 && fullFileName.lastIndexOf(".") != 0) {

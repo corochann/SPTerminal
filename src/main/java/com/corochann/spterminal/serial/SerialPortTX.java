@@ -1,5 +1,6 @@
 package com.corochann.spterminal.serial;
 
+import com.corochann.spterminal.config.ProjectConfig;
 import com.corochann.spterminal.util.MyUtils;
 
 import java.io.IOException;
@@ -18,14 +19,15 @@ public class SerialPortTX {
 
     public void transmitString(String str) {
         // UnEscape |str| to understand which character is transmitted.
-        //System.out.println("TX string: " + MyUtils.unEscapeString(str));
-        System.out.println("TX string: " + MyUtils.unEscapeString(str) + " = " + Arrays.toString(str.getBytes()));
+        if (ProjectConfig.DEBUG) {
+            System.out.println("TX string: " + MyUtils.unEscapeString(str) + " = " + Arrays.toString(str.getBytes()));
+        }
 
         transmitBytes(str.getBytes());
     }
 
     public void transmitAscii(int asciiDecimalValue) {
-        System.out.println("TX ascii: " + asciiDecimalValue);
+        if (ProjectConfig.DEBUG) System.out.println("TX ascii: " + asciiDecimalValue);
         byte[] bytes = new byte[2];
         bytes[0] = new Integer(asciiDecimalValue).byteValue();
         transmitBytes(bytes);

@@ -74,7 +74,8 @@ public class SerialPortRX extends Thread {
             MyLogger myLogger = SPTerminal.getFrame().getLogger();
             if (myLogger != null) {
                 // Remove "\r" for Windows unnecessary new line string. Always use Linux format.
-                String logStr = new String(buffer, 0 , k).replace("\r", "");
+                //String logStr = new String(buffer, 0 , k).replace("\r", "");
+                String logStr = new String(buffer, 0 , k);
                 //System.out.println("[Debug] logStr = " + MyUtils.unEscapeString(logStr));
                 myLogger.addLog(logStr);
             }

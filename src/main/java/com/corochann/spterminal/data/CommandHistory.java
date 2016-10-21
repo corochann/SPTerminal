@@ -94,7 +94,7 @@ public class CommandHistory implements Serializable {
      * @return
      */
     private static String getPath(String portName) {
-        String saveDirPath = CACHE_FOLDER + "/" + portName;
+        String saveDirPath = CACHE_FOLDER + portName;
         MyUtils.prepareDir(saveDirPath);
         return saveDirPath + "/" + PREFIX;  // Use PREFIX as filename.
     }

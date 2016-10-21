@@ -9,6 +9,8 @@ import java.awt.*;
  * Note: use {#repaint()} to update the graphics after setHighlightLine() call. (App-triggered painting)
  */
 public class HighlightableJTextPane extends JTextPane {
+    private static final int TAB_STOP_SIZE = 100;
+
     /** The line to be highlighted. -1 indicates that no line should be highlighted. */
     private int highlightLine = -1;
     /**
@@ -35,6 +37,32 @@ public class HighlightableJTextPane extends JTextPane {
         highlightColor = color;
     }
 
+    @Override
+    public void paint(Graphics g) {
+        //System.out.println("execute paint with highlinetLine = " + highlightLine);
+        super.paint(g);
+        highlightLine(g, highlightLine);
+    }
+
+    private void highlightLine(Graphics g, int line) {
+        //System.out.println("highlightLine " + line);
+        if (line < 0) return; // Do nothing when selected line is invalid (no line is selected)
+        try {
+            /* Remove last drawed rectangle */
+            //removeHighlight();
+
+            /* Draw new rectangle */
+            Rectangle r = this.modelToView(this.getLineStartOffset(line));
+
+            // Currently set alpha small value, so that we can see original text after drawing rectangle on top of textarea
+            g.setColor(highlightColor);
+            g.fillRect(0, r.y, this.getWidth(), r.height);
+        } catch (BadLocationException ble) {
+            ble.printStackTrace();
+        }
+    }
+
+    /*--- StyleDocument util functions ---*/
     public void setTextWithColor(String msg, Color c) {
         StyleContext sc = StyleContext.getDefaultStyleContext();
         AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Foreground, c);
@@ -54,14 +82,12 @@ public class HighlightableJTextPane extends JTextPane {
      * @param str the text to insert
      */
     public void append(String str) {
-        //int len = this.getDocument().getLength();
-        //this.setCaretPosition(len);
-        //this.replaceSelection(msg);
         Document doc = getDocument();
         if (doc != null) {
             try {
                 doc.insertString(doc.getLength(), str, null);
-            } catch (BadLocationException e) {
+            } catch (BadLocationException ble) {
+                ble.printStackTrace();
             }
         }
     }
@@ -89,13 +115,47 @@ public class HighlightableJTextPane extends JTextPane {
         //aset = sc.addAttribute(aset, StyleConstants.FontFamily, "Lucida Console");
         aset = sc.addAttribute(aset, StyleConstants.Alignment, StyleConstants.ALIGN_JUSTIFIED);
 
-        int caretPosition = this.getCaretPosition();  // Backup caret position.
-        int len = this.getDocument().getLength();
-        this.setCaretPosition(len);
-        this.setCharacterAttributes(aset, false);
-        this.replaceSelection(str);
+        StyledDocument doc = getStyledDocument();
+        if (doc != null) {
+            try {
+                doc.insertString(doc.getLength(), str, aset);
+            } catch (BadLocationException ble) {
+                ble.printStackTrace();
+            }
+        }
+    }
 
-        this.setCaretPosition(caretPosition);  // Revert the caret position.
+    /**
+     * (Copied from {@link JTextArea})
+     * Replaces text from the indicated start to end position with the
+     * new text specified.  Does nothing if the model is null.  Simply
+     * does a delete if the new string is null or empty.
+     *
+     * @param str the text to use as the replacement
+     * @param start the start position &gt;= 0
+     * @param end the end position &gt;= start
+     * @exception IllegalArgumentException  if part of the range is an
+     *  invalid position in the model
+     */
+    public void replaceRange(String str, int start, int end) {
+        if (end < start) {
+            throw new IllegalArgumentException("end before start");
+        }
+        Document doc = getDocument();
+        if (doc != null) {
+            try {
+                if (doc instanceof AbstractDocument) {
+                    //System.out.println("[Debug] abstract doc, end = " + end + ", start = " + start + ", length = " + ((AbstractDocument)doc).getLength());
+                    ((AbstractDocument)doc).replace(start, end - start, str, null);
+                }
+                else {
+                    doc.remove(start, end - start);
+                    doc.insertString(start, str, null);
+                }
+            } catch (BadLocationException e) {
+                throw new IllegalArgumentException(e.getMessage());
+            }
+        }
     }
 
     /**
@@ -117,44 +177,36 @@ public class HighlightableJTextPane extends JTextPane {
         //aset = sc.addAttribute(aset, StyleConstants.FontFamily, "Lucida Console");
         aset = sc.addAttribute(aset, StyleConstants.Alignment, StyleConstants.ALIGN_JUSTIFIED);
 
-        int caretPosition = this.getCaretPosition();  // Backup caret position.
-        //int len = this.getDocument().getLength();
-        this.setCaretPosition(start);
-        this.moveCaretPosition(end);
-        this.replaceSelection(str);
-        // set attribute
-        this.setCaretPosition(start);
-        this.moveCaretPosition(start + str.length());
-        this.setCharacterAttributes(aset, false);
-
-        this.setCaretPosition(caretPosition);  // Revert the caret position.
-    }
-
-
-    @Override
-    public void paint(Graphics g) {
-        //System.out.println("execute paint with highlinetLine = " + highlightLine);
-        super.paint(g);
-        highlightLine(g, highlightLine);
-    }
-
-    private void highlightLine(Graphics g, int line) {
-        //System.out.println("highlightLine " + line);
-        if (line < 0) return; // Do nothing when selected line is invalid (no line is selected)
-        try {
-            /* Remove last drawed rectangle */
-            //removeHighlight();
-
-            /* Draw new rectangle */
-            Rectangle r = this.modelToView(this.getLineStartOffset(line));
-
-            // Currently set alpha small value, so that we can see original text after drawing rectangle on top of textarea
-            g.setColor(highlightColor);
-            g.fillRect(0, r.y, this.getWidth(), r.height);
-        } catch (BadLocationException ble) {
-            ble.printStackTrace();
+        StyledDocument doc = getStyledDocument();
+        if (doc != null) {
+            try {
+                int len = end - start;
+                if (len >= 0) {
+                    doc.remove(start, len);
+                } else {
+                    throw new IllegalArgumentException("end before start");
+                }
+                doc.insertString(start, str, aset);
+            } catch (BadLocationException ble) {
+                ble.printStackTrace();
+                throw new IllegalArgumentException(ble.getMessage());
+            }
         }
+
+        /* Deprecated way, use caret to update text. */
+        //int caretPosition = this.getCaretPosition();  // Backup caret position.
+        ////int len = this.getDocument().getLength();
+        //this.setCaretPosition(start);
+        //this.moveCaretPosition(end);
+        //this.replaceSelection(str);
+        //// set attribute
+        //this.setCaretPosition(start);
+        //this.moveCaretPosition(start + str.length());
+        //this.setCharacterAttributes(aset, false);
+        //
+        //this.setCaretPosition(caretPosition);  // Revert the caret position.
     }
+
 
     /**
      * Ref: http://stackoverflow.com/questions/2750073/how-to-use-caret-to-tell-which-line-it-is-in-from-jtextpane-java
@@ -236,35 +288,26 @@ public class HighlightableJTextPane extends JTextPane {
     }
 
     /**
-     * (Copied from {@link JTextArea})
-     * Replaces text from the indicated start to end position with the
-     * new text specified.  Does nothing if the model is null.  Simply
-     * does a delete if the new string is null or empty.
-     *
-     * @param str the text to use as the replacement
-     * @param start the start position &gt;= 0
-     * @param end the end position &gt;= start
-     * @exception IllegalArgumentException  if part of the range is an
-     *  invalid position in the model
+     * Set Tab size, it should be called after {@link #setFont} with monospace font.
+     * Raf:
+     * http://stackoverflow.com/questions/33544621/java-setting-indent-size-on-jtextpane
+     * http://www.java2s.com/Code/Java/Swing-JFC/ATabSetinaJTextPane.htm
+     * @see {@link JTextArea#setTabSize(int)}
+     * @param size
      */
-    public void replaceRange(String str, int start, int end) {
-        if (end < start) {
-            throw new IllegalArgumentException("end before start");
+    public void setTabSize(int size) {
+        FontMetrics fm = getFontMetrics(getFont());
+        int spaceWidth = fm.charWidth(' ');// one space pixel width
+        int tabWidth = spaceWidth * size;  // Tab should be stopped at this pixel
+
+        TabStop[] tabs = new TabStop[TAB_STOP_SIZE];
+        for (int i = 0; i < TAB_STOP_SIZE; i++) {
+            tabs[i] = new TabStop((i+1) * tabWidth);
         }
-        Document doc = getDocument();
-        if (doc != null) {
-            try {
-                if (doc instanceof AbstractDocument) {
-                    //System.out.println("[Debug] abstract doc, end = " + end + ", start = " + start + ", length = " + ((AbstractDocument)doc).getLength());
-                    ((AbstractDocument)doc).replace(start, end - start, str, null);
-                }
-                else {
-                    doc.remove(start, end - start);
-                    doc.insertString(start, str, null);
-                }
-            } catch (BadLocationException e) {
-                throw new IllegalArgumentException(e.getMessage());
-            }
-        }
+        TabSet tabSet = new TabSet(tabs);
+
+        StyleContext sc = StyleContext.getDefaultStyleContext();
+        AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.TabSet, tabSet);
+        setParagraphAttributes(aset, false);
     }
 }

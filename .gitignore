@@ -30,3 +30,4 @@ build/
 userfile/alias/
 userfile/ttl/
 src/dist/userfile/SerialPortConfig.xml
+userfile/filter/
