@@ -1,41 +1,94 @@
-group 'com.corochann'
-version '0.04'  // build version
-
-apply plugin: 'java'
-apply plugin: 'application'
-
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
-
-mainClassName = 'com.corochann.spterminal.ui.SPTerminal'
-
 /* Setting encoding */
 def defaultEncoding = 'UTF-8'
 tasks.withType(AbstractCompile)*.options*.encoding = defaultEncoding
 tasks.withType(GroovyCompile)*.groovyOptions*.encoding = defaultEncoding
 
-
-repositories {
-    mavenCentral()
+allprojects {
+    apply plugin: 'java'
+    group = 'com.corochann'
+    version = '0.05'  // build version
+    sourceCompatibility = 1.7
+    targetCompatibility = 1.7
 }
 
-dependencies {
-    compile fileTree(dir: 'lib', include: '*.jar')
-    compile 'net.java.dev.jna:jna-platform:4.1.0'
-    testCompile 'junit:junit:4.11'
-}
-
-task copyLicense {
-    outputs.file new File("$buildDir/LICENSE")
-    doLast {
-        copy {
-            from "LICENSE"
-            into "$buildDir"
-        }
+subprojects {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        compile fileTree(dir: 'lib', include: '*.jar')
+        testCompile 'junit:junit:4.11'
     }
 }
 
-applicationDistribution.from(copyLicense) {
-    into ""
+project(':spterminal') {
+    apply plugin: 'application'
+    task copyLicense(type: Copy) {
+        from '../LICENSE'
+        into 'src/dist/'
+    }
+    task copyPlugins(type: Copy) {
+        from './plugins/'
+        into './src/dist/plugins/'
+    }
+    installDist.doFirst {
+        copyLicense
+        copyPlugins
+    }
+    applicationDistribution.from(copyLicense) {
+        into ""
+    }
+    applicationDistribution.from(copyPlugins) {
+        into "plugins"
+    }
+
+    mainClassName = 'com.corochann.spterminal.ui.SPTerminal'
+    dependencies {
+        compile fileTree(dir: 'lib', include: '*.jar')
+        compile 'net.java.dev.jna:jna-platform:4.1.0'
+        testCompile 'junit:junit:4.11'
+    }
 }
 
+project(':webcamplugin') {
+    version = '0.0.1'
+    configurations {
+        releaseJars
+    }
+    dependencies {
+        /* compile will be used for compile time but not included in fatJar,
+         * releaseJars is used for compile time and also they are bundled in fatJar task
+         */
+        compile project(':spterminal')
+        releaseJars 'com.github.sarxos:webcam-capture:0.3.10'
+        releaseJars 'org.bytedeco:javacv:1.2'
+        releaseJars 'org.bytedeco.javacpp-presets:opencv:3.1.0-1.2:windows-x86_64'
+        releaseJars 'org.bytedeco.javacpp-presets:ffmpeg:3.1.2-1.2:windows-x86_64'
+        configurations.compile.extendsFrom(configurations.releaseJars)
+    }
+    configurations {
+        all*.exclude group: 'org.bytedeco', module: 'javacpp-presets'
+    }
+    jar {
+        baseName = 'webcamplugin'
+        doLast {
+            println "copying webcamplugin.jar: " +
+            copy {
+                from jar.getArchivePath()    //"./build/libs/webcamplugin-"+version+".jar"
+                into "../spterminal/plugins"
+            }
+        }
+    }
+    task fatJar(type: Jar) {
+        baseName = 'webcamplugin-bundle'
+        from { configurations.releaseJars.collect { it.isDirectory() ? it : zipTree(it) } }
+        with jar
+        doLast {
+            println "copying webcamplugin-bundle.jar: "
+            copy {
+                from fatJar.archivePath
+                into "../spterminal/plugins"
+            }
+        }
+    }
+}
