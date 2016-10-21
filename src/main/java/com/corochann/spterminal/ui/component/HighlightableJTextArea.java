@@ -8,7 +8,7 @@ import java.awt.*;
  * JTextArea with extended feature that one line of background can be highlighted
  * Note: use {#repaint()} to update the graphics after setHighlightLine() call. (App-triggered painting)
  */
-public class HighlightableTextArea extends JTextArea {
+public class HighlightableJTextArea extends JTextArea {
     /** The line to be highlighted. -1 indicates that no line should be highlighted. */
     private int highlightLine = -1;
     /**
@@ -17,7 +17,7 @@ public class HighlightableTextArea extends JTextArea {
      */
     private Color highlightColor = new Color(51, 153, 255, 30); // Default highlightColor
 
-    public HighlightableTextArea(int rows, int columns) {
+    public HighlightableJTextArea(int rows, int columns) {
         super(rows, columns);
     }
 

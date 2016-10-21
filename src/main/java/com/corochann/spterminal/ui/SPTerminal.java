@@ -5,6 +5,7 @@ import com.corochann.spterminal.config.ProjectConfig;
 import com.corochann.spterminal.config.SPTerminalPreference;
 import com.corochann.spterminal.config.SerialPortConfig;
 import com.corochann.spterminal.config.style.StyleConfig;
+import com.corochann.spterminal.log.MyAnsiLogger;
 import com.corochann.spterminal.log.MyLogger;
 import com.corochann.spterminal.serial.SerialPortManager;
 import com.corochann.spterminal.ui.component.CustomJButton;
@@ -47,6 +48,7 @@ public class SPTerminal extends JFrame implements ActionListener {
 
     // ----- Relations -------
     private MyLogger mLogger = null;
+    private MyAnsiLogger mAnsiLogger = null;
     private static SPTerminalPreference mPreference;
 
     // ----- Attributes -------
@@ -105,6 +107,7 @@ public class SPTerminal extends JFrame implements ActionListener {
      * @return
      */
     private static int initialSetup() {
+        /*--- folder init ---*/
         mPreference = SPTerminalPreference.getInstance();
         int ret = -1;
         try {
@@ -129,7 +132,9 @@ public class SPTerminal extends JFrame implements ActionListener {
         }
         // Finalize logging
         if (mLogger != null) mLogger.Finalize();
+        if (mAnsiLogger != null) mAnsiLogger.Finalize();
         mLogger = null;
+        mAnsiLogger = null;
         ret = 0;
         return ret;
     }
@@ -379,6 +384,8 @@ public class SPTerminal extends JFrame implements ActionListener {
                 // Finalize logging
                 if (mLogger != null) mLogger.Finalize();
                 mLogger = null;
+                if (mAnsiLogger != null) mAnsiLogger.Finalize();
+                mAnsiLogger = null;
                 break;
             case STATE_CONNECTING:
                 mConnectButton.setText("Connecting...");
@@ -395,7 +402,11 @@ public class SPTerminal extends JFrame implements ActionListener {
                 // Initialize logging
                 LogConfig logConfig = mPreference.getLogConfig();
                 if (logConfig.isAutoLogging()) {
-                    mLogger = new MyLogger(logConfig.getAutoLogFileName(), serialPortManager.getCurrentPortName());
+                    if (ProjectConfig.DEBUG) {
+                        /* Save Raw log only for debug */
+                        mLogger = new MyLogger(logConfig.getAutoLogFileName(), serialPortManager.getCurrentPortName());
+                    }
+                    mAnsiLogger = new MyAnsiLogger(logConfig.getAutoLogFileName(), serialPortManager.getCurrentPortName());
                 }
                 break;
             default:
@@ -412,4 +423,10 @@ public class SPTerminal extends JFrame implements ActionListener {
     public MyLogger getLogger() {
         return mLogger;
     }
+
+    public MyAnsiLogger getAnsiLogger() {
+        return mAnsiLogger;
+    }
+
 }
+

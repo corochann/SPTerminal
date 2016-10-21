@@ -13,6 +13,7 @@ import java.awt.event.KeyEvent;
 public class SPTMenuBar extends JMenuBar implements ActionListener {
 
     /* Action definitions */
+    public static final String ACTION_EDIT_CLEARSCREEN = "clearscreen";
     public static final String ACTION_SETUP_SERIALPORT = "setupserialport";
     public static final String ACTION_SETUP_LOG = "setuplog";
     public static final String ACTION_SETUP_STYLE = "setupstyle";
@@ -23,6 +24,18 @@ public class SPTMenuBar extends JMenuBar implements ActionListener {
         super();
 
         /* MENU: File */
+
+        /* MENU: Edit */
+        JMenu editMenu = new JMenu("Edit");
+        editMenu.setMnemonic(KeyEvent.VK_E);
+          /* clear screen */
+        JMenuItem clearScreen = new JMenuItem("Clear screen");
+        clearScreen.setMnemonic(KeyEvent.VK_C);
+        clearScreen.addActionListener(this);
+        clearScreen.setActionCommand(ACTION_EDIT_CLEARSCREEN);
+
+        editMenu.add(clearScreen);
+
         /* MENU: Setup */
         JMenu setupMenu = new JMenu("Setup");
         setupMenu.setMnemonic(KeyEvent.VK_S);
@@ -70,6 +83,7 @@ public class SPTMenuBar extends JMenuBar implements ActionListener {
 
         helpMenu.add(about);
 
+        this.add(editMenu);
         this.add(setupMenu);
         this.add(toolsMenu);
         this.add(helpMenu);
@@ -80,6 +94,9 @@ public class SPTMenuBar extends JMenuBar implements ActionListener {
         String action = e.getActionCommand();
         SPTerminal frame = SPTerminal.getFrame();
         switch (action) {
+            case ACTION_EDIT_CLEARSCREEN:
+                frame.mTerminalPanel.clearRXScreen();
+                break;
             case ACTION_SETUP_STYLE:
                 StyleConfigDialog styleConfigDialog = new StyleConfigDialog(frame);
                 styleConfigDialog.setLocationRelativeTo(frame);

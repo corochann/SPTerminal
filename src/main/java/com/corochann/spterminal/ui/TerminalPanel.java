@@ -8,21 +8,21 @@ import com.corochann.spterminal.data.model.HighlightableCommand;
 import com.corochann.spterminal.serial.SerialPortRX;
 import com.corochann.spterminal.serial.SerialPortTX;
 import com.corochann.spterminal.teraterm.TTLMacroExecutor;
+import com.corochann.spterminal.ui.component.AnsiJTextPane;
 import com.corochann.spterminal.ui.component.CustomJTextField;
-import com.corochann.spterminal.ui.component.HighlightableTextPane;
+import com.corochann.spterminal.ui.component.HighlightableJTextPane;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultCaret;
 import javax.swing.text.Document;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.awt.event.*;
+import java.io.IOException;
 import java.util.Map;
 import java.util.Vector;
 
@@ -47,10 +47,9 @@ public class TerminalPanel extends JPanel implements ActionListener {
     private SerialPortRX portRX = null;
 
     /* Attribute */
-    private final JCheckBox mRXTextAreaAutoScrollCheckBox;
-    private final JTextArea mRXTextArea;
+    private final AnsiJTextPane mRXTextPane;
     private final CustomJTextField mTXTextField;
-    private final HighlightableTextPane mTXTextPane;
+    private final HighlightableJTextPane mTXTextPane;
     private CommandHistory mCH;
     private String portName;
     private String currentExpectedTXText = "";
@@ -61,6 +60,7 @@ public class TerminalPanel extends JPanel implements ActionListener {
     private final Color defaultForeGroundColor;
     private final Color charHighlightColor;
     private TTLMacroConfig ttlMacroConfig;
+    private boolean doAutoScroll = true;
 
     TerminalPanel() {
         super(new BorderLayout());
@@ -82,27 +82,97 @@ public class TerminalPanel extends JPanel implements ActionListener {
         terminalRightPanel.setMinimumSize(new Dimension(0, 0));
 
         /* Left Panel */
-        mRXTextAreaAutoScrollCheckBox = new JCheckBox("Auto-scroll", true);
-        mRXTextAreaAutoScrollCheckBox.setHorizontalTextPosition(JCheckBox.LEFT);
-        mRXTextAreaAutoScrollCheckBox.setToolTipText(
-                "When enabled, it automatically scroll below text area to bottom when log comes");
+        mRXTextPane = new AnsiJTextPane(styleConfig);  // rows 40, height 75
+        mRXTextPane.setPreferredSize(new Dimension(600, 400)); // width, height
+
+        /*
+         * Configure JTextPane to not update the cursor position after
+         * inserting or appending text to the JTextPane. This disables the
+         * default behavior of scrolling automatically whenever
+         * inserting or appending text into the JTextPane: we want scrolling
+         * to only occur at our discretion, not blindly.
+         * NOTE that this breaks normal typing into the JTextPane.
+         * This approach assumes that all updates to the ScrollingJTextPane are programmatic.
+         */
+        DefaultCaret caret = (DefaultCaret) mRXTextPane.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+
+        final JScrollPane inputStreamScrollPane = new JScrollPane(mRXTextPane);
+        final JScrollBar inputStreamVerticalScrollBar = inputStreamScrollPane.getVerticalScrollBar();
+        mRXTextPane.setVerticalScrollBar(inputStreamVerticalScrollBar);
+        // Same effect with TextArea's setLineWrap(true);
+        inputStreamScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        BoundedRangeModel brm = inputStreamScrollPane.getVerticalScrollBar().getModel();
+        inputStreamScrollPane.getVerticalScrollBar().addAdjustmentListener(new AdjustmentListener() {
+            BoundedRangeModel brm = inputStreamScrollPane.getVerticalScrollBar().getModel();
+            @Override
+            public void adjustmentValueChanged(AdjustmentEvent e) {
+                // Invoked when user select and move the cursor of scroll by mouse explicitly.
+                if (!brm.getValueIsAdjusting()) {
+                    mRXTextPane.setPreferredSize(new Dimension(mRXTextPane.getWidth(), mRXTextPane.getHeight() + inputStreamVerticalScrollBar.getVisibleAmount()));
+                    mRXTextPane.setMinimumSize(new Dimension(mRXTextPane.getWidth(), mRXTextPane.getPreferredSize().height + inputStreamVerticalScrollBar.getVisibleAmount()));
+                    //System.out.println("[DEBUG] mRXTextPane.getWidth() = " + mRXTextPane.getWidth()
+                    //        + ", height = " + mRXTextPane.getHeight()
+                    //        + ", extent = " + inputStreamVerticalScrollBar.getVisibleAmount()
+                    //        + ", line height = " + mRXTextPane.getFontMetrics(mRXTextPane.getFont()).getHeight()
+                    //);
 
 
-        mRXTextArea = new JTextArea(40, 75);
-        mRXTextArea.setLineWrap(false);
+                    if (doAutoScroll) brm.setValue(brm.getMaximum());
+                } else {
+                    // doAutoScroll will be set to true when user reaches at the bottom of document.
+                    doAutoScroll = ((brm.getValue() + brm.getExtent()) == brm.getMaximum());
+                }
+            }
+        });
 
-        JScrollPane inputStreamScrollPane = new JScrollPane(mRXTextArea);
-        terminalLeftPanel.add(mRXTextAreaAutoScrollCheckBox);
+        inputStreamScrollPane.addMouseWheelListener(new MouseWheelListener() {
+            BoundedRangeModel brm = inputStreamScrollPane.getVerticalScrollBar().getModel();
+
+
+            @Override
+            public void mouseWheelMoved(MouseWheelEvent e) {
+                // Invoked when user use mouse wheel to scroll
+                //System.out.println("mouseWheelMoved "
+                //        + ", doAutoScroll = " + doAutoScroll
+                //        + ", scrollAmount = " + e.getScrollAmount()
+                //        // scroll down: positive, scroll up: negative value
+                //        + ", wheelRotation = " + e.getWheelRotation()
+                //        + ", scrollType = " + e.getScrollType()
+                //        + ", scrollType = " + e.getPoint()
+                //        + ", isAdjusting = " + brm.getValueIsAdjusting()
+                //        + ", value = " + brm.getValue()
+                //        + ", extent = " + brm.getExtent()
+                //        + ", maximum = " + brm.getMaximum()
+                //);
+
+                if (e.getWheelRotation() < 0) {
+                    /* If user trying to scroll up, user want to stop auto scroll. doAutoScroll should be false. */
+                    doAutoScroll = false;
+                } else {
+                    /* doAutoScroll will be set to true when user reaches at the bottom of document. */
+                    doAutoScroll = ((brm.getValue() + brm.getExtent()) == brm.getMaximum());
+                }
+            }
+        });
+
         terminalLeftPanel.add(inputStreamScrollPane);
 
-
         terminalSplitPane.setLeftComponent(terminalLeftPanel);
+
+        JTextPane textPane = new JTextPane();
+        textPane.setPreferredSize(new Dimension(300, 200)); // width, height
+
+        JScrollPane scrollPane = new JScrollPane(textPane);
+        // Same effect with TextArea's setLineWrap(true);
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+
 
         /* Right panel */
         mTXTextField = new CustomJTextField();
         mTXTextField.setToolTipText(STATUS_TEXT_DEFAULT);
         mTXTextField.setPreferredSize(new Dimension(
-                500,
+                300,
                 mTXTextField.getPreferredSize().height
         ));
         mTXTextField.setActionCommand(ACTION_OUTPUT_STREAM);
@@ -111,12 +181,12 @@ public class TerminalPanel extends JPanel implements ActionListener {
         mTXTextField.addKeyListener(new TXTextFieldKeyListener());  // Key handling logic
         mTXTextField.getDocument().addDocumentListener(new TXTextFieldDocumentListener()); // Document handling logic
 
-        mTXTextPane = new HighlightableTextPane();
+        mTXTextPane = new HighlightableJTextPane();
         if (styleConfig.getLineHighlightColor() != null) {
             mTXTextPane.setHighlightColor(styleConfig.getLineHighlightColor());
         }
 
-        mTXTextPane.setPreferredSize(new Dimension(30, 600));
+        mTXTextPane.setPreferredSize(new Dimension(300, 400));
         //mTXTextPane.setLineWrap(false);
         JScrollPane outputStreamScrollPane = new JScrollPane(mTXTextPane);
 
@@ -127,7 +197,7 @@ public class TerminalPanel extends JPanel implements ActionListener {
 
         /*--- Font setting ---*/
         if (styleConfig.getTerminalFont() != null) {
-            mRXTextArea.setFont(styleConfig.getTerminalFont());
+            mRXTextPane.setFont(styleConfig.getTerminalFont());
             mTXTextField.setFont(styleConfig.getTerminalFont());
             mTXTextPane.setFont(styleConfig.getTerminalFont());
         }
@@ -293,27 +363,57 @@ public class TerminalPanel extends JPanel implements ActionListener {
         SwingUtilities.invokeLater(new Runnable(){
             @Override
             public void run(){
-                mRXTextArea.append(str);
-                if (mRXTextAreaAutoScrollCheckBox.isSelected()) {
-                    /* Scroll to bottom */
-                    try {
-                        mRXTextArea.setCaretPosition(mRXTextArea.getLineStartOffset(mRXTextArea.getLineCount() - 1));
-                    } catch (BadLocationException ble) {
-                        ble.printStackTrace();
-                    }
-                }
+                mRXTextPane.append(str);
             }
         });
+    }
+
+
+    public void writeRXText(final byte[] b, final int off, final int len) {
+        //System.out.println("[DEBUG] appendRXText " + str);
+        /* b will be changed by outside, so we MUST copy this byte[] to another buffer to prevent overwritten */
+        final byte[] buffer = new byte[len];
+        System.arraycopy(b, off, buffer, 0, len);
+            SwingUtilities.invokeLater(new Runnable(){
+                @Override
+                public void run(){
+                    try {
+                        //mRXTextPane.write(b, off, len);
+                        mRXTextPane.write(buffer, 0, len);
+                        mRXTextPane.flush();
+                    } catch (IOException ioe) {
+                        ioe.printStackTrace();
+                    }
+                }
+            });
     }
 
     public void setRXText(final String str) {
         SwingUtilities.invokeLater(new Runnable(){
             @Override
             public void run(){
-                mRXTextArea.setText(str);
-                if (mRXTextAreaAutoScrollCheckBox.isSelected()) {
-                    /* Scroll to bottom */
-                    mRXTextArea.setCaretPosition(mRXTextArea.getDocument().getLength());
+                mRXTextPane.setText(str);
+            }
+        });
+    }
+
+    public void removeLastlineRXText() {
+        SwingUtilities.invokeLater(new Runnable(){
+            @Override
+            public void run(){
+                int lastLine = mRXTextPane.getLineCount() - 1;
+                try {
+                    int startOffset = mRXTextPane.getLineStartOffset(lastLine);
+                    int endOffset = mRXTextPane.getLineEndOffset(lastLine);
+                    System.out.println("[DEBUG]last line -> " + lastLine
+                            + ", mRXTextPane.getLineStartOffset(lastLine) " + startOffset
+                            + ", mRXTextPane.getLineEndOffset(lastLine) " + endOffset
+                            + ", str \n" + mRXTextPane.getText(startOffset, endOffset - startOffset)
+                    );
+                    mRXTextPane.replaceRange("", startOffset, endOffset);
+                    mRXTextPane.decrementCursorPositionRow();
+                } catch (BadLocationException e) {
+                    e.printStackTrace();
                 }
             }
         });
@@ -324,23 +424,32 @@ public class TerminalPanel extends JPanel implements ActionListener {
         SwingUtilities.invokeLater(new Runnable(){
             @Override
             public void run(){
-                int lastLine = mRXTextArea.getLineCount() - 1;
+                int lastLine = mRXTextPane.getLineCount() - 1;
                 try {
                     //System.out.println("[DEBUG]last line -> " + lastLine
-                    //        + ", mRXTextArea.getLineStartOffset(lastLine) " + mRXTextArea.getLineStartOffset(lastLine)
-                    //        + ", mRXTextArea.getLineEndOffset(lastLine) " + mRXTextArea.getLineEndOffset(lastLine));
-                    mRXTextArea.replaceRange(str,
-                            mRXTextArea.getLineStartOffset(lastLine),
-                            mRXTextArea.getLineEndOffset(lastLine));
+                    //        + ", mRXTextPane.getLineStartOffset(lastLine) " + mRXTextPane.getLineStartOffset(lastLine)
+                    //        + ", mRXTextPane.getLineEndOffset(lastLine) " + mRXTextPane.getLineEndOffset(lastLine));
+                    mRXTextPane.replaceRange(str,
+                            mRXTextPane.getLineStartOffset(lastLine),
+                            mRXTextPane.getLineEndOffset(lastLine));
                 } catch (BadLocationException e) {
                     e.printStackTrace();
                 }
-                if (mRXTextAreaAutoScrollCheckBox.isSelected()) {
-                    /* Scroll to bottom */
-                    mRXTextArea.setCaretPosition(mRXTextArea.getDocument().getLength());
-                }
             }
         });
+    }
+
+    public void clearRXScreen() {
+        if (SwingUtilities.isEventDispatchThread()) {
+            mRXTextPane.clearScreen();
+        } else {
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    clearRXScreen();
+                }
+            });
+        }
     }
 
     @Override

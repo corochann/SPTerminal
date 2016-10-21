@@ -1,5 +1,7 @@
 package com.corochann.spterminal.serial;
 
+import com.corochann.spterminal.config.ProjectConfig;
+import com.corochann.spterminal.log.MyAnsiLogger;
 import com.corochann.spterminal.log.MyLogger;
 import com.corochann.spterminal.ui.SPTerminal;
 import com.corochann.spterminal.util.MyUtils;
@@ -52,60 +54,30 @@ public class SerialPortRX extends Thread {
 
     }
 
-
-    private byte[] formattedBuffer = new byte[MAX_RECEIVE_BYTE_SIZE];
-    private byte[] lastLineBuffer = new byte[MAX_RECEIVE_BYTE_SIZE];
-    private int lastLineCurrentPos = 0;
-
     /**
      * This is the protocol how to handle received buffer
      * @param buffer received byte stream
      * @param k length of buffer
      */
     private synchronized void handleRXStream(final byte[] buffer, int k) {
-        /* copy lastLineBugger to formattedBuffer */
-        boolean replaceFlag = lastLineCurrentPos > 0;
-        int currentPos = lastLineCurrentPos;
-        System.arraycopy(lastLineBuffer, 0, formattedBuffer, 0, lastLineCurrentPos);
-
-        /* formatting received buffer. */
-        for (int scan = 0; scan < k; scan++) {
-            if (buffer[scan] == 7) { // 7 == BELL
-                // Ignore BELL string, do nothing
-            } else if (buffer[scan] == 8) { // 8 == backspace
-                    if (currentPos == 0 || lastLineCurrentPos == 0) {
-                        System.out.println("[ERROR] backspace detected with currentPos = " + currentPos + ", lastLineCurrentPos = " + lastLineCurrentPos);
-                    } else {
-                        currentPos--;
-                        lastLineCurrentPos--;
-                    }
-            } else {
-                formattedBuffer[currentPos++] = buffer[scan];
-                if (buffer[scan] == 10) { // 10 == "\n"
-                    lastLineCurrentPos = 0;
-                } else {
-                    lastLineBuffer[lastLineCurrentPos++] = buffer[scan];
-                }
-            }
-        }
-
-        /* Show it on terminal - RXTextArea */
-        String rxStr = new String(formattedBuffer, 0, currentPos);
-        if (!replaceFlag) {
-            /* It is ok to just append received buffer */
-            SPTerminal.getFrame().mTerminalPanel.appendRXText(rxStr);
-        } else {
-            /* Need to replace last line with received buffer */
-            SPTerminal.getFrame().mTerminalPanel.replaceLastlineRXText(rxStr);
-        }
+        /* Show console, write to RXText */
+        SPTerminal.getFrame().mTerminalPanel.writeRXText(buffer, 0, k);
 
         /* Save log */
-        MyLogger myLogger = SPTerminal.getFrame().getLogger();
-        if (myLogger != null) {
-            // Remove "\r" for Windows unnecessary new line string. Always use Linux format.
-            String logStr = new String(buffer, 0 , k).replace("\r", "");
-            //System.out.println("[Debug] logStr = " + MyUtils.unEscapeString(logStr));
-            myLogger.addLog(logStr);
+        MyAnsiLogger myAnsiLogger = SPTerminal.getFrame().getAnsiLogger();
+        if (myAnsiLogger != null) {
+            myAnsiLogger.addLog(buffer, k);
+        }
+
+        {
+            /* Save Raw log only for debug */
+            MyLogger myLogger = SPTerminal.getFrame().getLogger();
+            if (myLogger != null) {
+                // Remove "\r" for Windows unnecessary new line string. Always use Linux format.
+                String logStr = new String(buffer, 0 , k).replace("\r", "");
+                //System.out.println("[Debug] logStr = " + MyUtils.unEscapeString(logStr));
+                myLogger.addLog(logStr);
+            }
         }
 
         //String lastLineLog = new String(lastLineBuffer, 0, lastLineCurrentPos);

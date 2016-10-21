@@ -29,6 +29,7 @@ Third-Party Software Licenses
 This section contains third-party software notices and/or additional
 terms for licensed third-party software components included within SPTerminal.
 
+
 1. Java Native Access
 
 Java Native Access project (JNA) is dual-licensed under 2
@@ -54,6 +55,7 @@ A copy is also included in the downloadable source code package
 containing JNA, in file "AL2.0", under the same directory
 as this file.
 
+
 2. PureJavaComm
 
 The code is Copyrighted by nyholku and is licensed under "Simplified BSD License".
@@ -61,3 +63,21 @@ The code is Copyrighted by nyholku and is licensed under "Simplified BSD License
 You may obtain a copy of the Simplified BSD License at:
 
 http://www.opensource.org/licenses/BSD-3-Clause
+
+
+3. Jansi
+
+Copyright (C) 2009, Progress Software Corporation and/or its
+subsidiaries or affiliates.  All rights reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.

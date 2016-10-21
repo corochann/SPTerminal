@@ -22,6 +22,13 @@ The software uses following libraries
  [github page](https://github.com/nyholku/purejavacomm)
  
  [Official page](http://www.sparetimelabs.com/purejavacomm/purejavacomm.php)
+ - Jansi
+ 
+ ANSI Escape codes support for JAVA.
+ 
+ [github page](https://github.com/fusesource/jansi)
+ 
+ [Official page](http://fusesource.github.io/jansi/)
  
 
  

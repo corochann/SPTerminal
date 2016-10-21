@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<java version="1.8.0_91" class="java.beans.XMLDecoder">
+ <object class="com.corochann.spterminal.config.style.StyleConfig">
+  <void property="baseBackGroundColor">
+   <object class="java.awt.Color">
+    <int>43</int>
+    <int>43</int>
+    <int>43</int>
+    <int>255</int>
+   </object>
+  </void>
+  <void property="baseFont">
+   <object class="java.awt.Font">
+    <string>Monospaced</string>
+    <int>0</int>
+    <int>12</int>
+   </object>
+  </void>
+  <void property="baseForeGroundColor">
+   <object class="java.awt.Color">
+    <int>169</int>
+    <int>183</int>
+    <int>198</int>
+    <int>255</int>
+   </object>
+  </void>
+  <void property="charHighlightColor">
+   <object class="java.awt.Color">
+    <int>152</int>
+    <int>118</int>
+    <int>170</int>
+    <int>255</int>
+   </object>
+  </void>
+  <void property="lineHighlightColor">
+   <object class="java.awt.Color">
+    <int>51</int>
+    <int>153</int>
+    <int>255</int>
+    <int>50</int>
+   </object>
+  </void>
+ </object>
+</java>

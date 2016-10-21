@@ -1,6 +1,7 @@
 package com.corochann.spterminal.serial;
 
 import com.corochann.spterminal.config.ProjectConfig;
+import com.corochann.spterminal.test.MockRX;
 import purejavacomm.CommPortIdentifier;
 import purejavacomm.PortInUseException;
 import purejavacomm.SerialPort;
@@ -85,8 +86,16 @@ public class SerialPortManager {
                     System.out.println( "Connected on port: " + portid.getName() );
 
                         /* setup serial port receiver/transmitter */
-                    portRX = new SerialPortRX(port.getInputStream());
-                    portRX.start();  // Start receiving thread
+                    if (ProjectConfig.BUILD_TYPE == ProjectConfig.BUILD_TYPE_RUN_MOCK_DEBUG) {
+                        /* DEBUG mode. Use mock portRX to emulate serial port RX */
+                        MockRX mockRX = new MockRX();
+                        portRX = new SerialPortRX(mockRX.getMockInputStream());
+                        portRX.start();  // Start receiving thread
+                        mockRX.start();  // Start sending mock byte stream (signal)
+                    } else {
+                        portRX = new SerialPortRX(port.getInputStream());
+                        portRX.start();  // Start receiving thread
+                    }
 
                     portTX = new SerialPortTX(port.getOutputStream());
 

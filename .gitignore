@@ -19,7 +19,7 @@ src/META-INF/MANIFEST.MF
 userfile/SerialPortConfig.xml
 userfile/LogConfig.xml
 userfile/StyleConfigSelector.xml
-log/
+log/*.log
 .gradle/
 gradlew
 gradlew.bat
@@ -29,3 +29,4 @@ gradle/wrapper/gradle-wrapper.properties
 build/
 userfile/alias/
 userfile/ttl/
+src/dist/userfile/SerialPortConfig.xml
