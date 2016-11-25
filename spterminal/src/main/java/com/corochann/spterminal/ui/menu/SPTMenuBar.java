@@ -1,13 +1,19 @@
 package com.corochann.spterminal.ui.menu;
 
+import com.corochann.spterminal.config.LayoutConfig;
 import com.corochann.spterminal.plugin.MenuItemPlugin;
+import com.corochann.spterminal.serial.SerialPortTX;
+import com.corochann.spterminal.teraterm.TTLMacroExecutor;
 import com.corochann.spterminal.ui.SPTerminal;
 import com.corochann.spterminal.util.MyUtils;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.io.File;
 import java.util.Iterator;
 
 /**
@@ -21,7 +27,9 @@ public class SPTMenuBar extends JMenuBar implements ActionListener {
     public static final String ACTION_SETUP_SERIALPORT = "setupserialport";
     public static final String ACTION_SETUP_LOG = "setuplog";
     public static final String ACTION_SETUP_STYLE = "setupstyle";
-    public static final String ACTION_TTLMACRO = "ttlmacro";
+    public static final String ACTION_SETUP_LAYOUT = "layout";
+    public static final String ACTION_TTLMACRO_REGISTER = "ttlmacroregister";
+    public static final String ACTION_TTLMACRO_EXE = "ttlmacroexe";
     public static final String ACTION_ABOUT = "about";
 
     public SPTMenuBar() {
@@ -57,6 +65,12 @@ public class SPTMenuBar extends JMenuBar implements ActionListener {
         styleSetup.addActionListener(this);
         styleSetup.setActionCommand(ACTION_SETUP_STYLE);
 
+          /* layout */
+        JMenuItem layoutSetup = new JMenuItem("Layout");
+        layoutSetup.setMnemonic(KeyEvent.VK_L);
+        layoutSetup.addActionListener(this);
+        layoutSetup.setActionCommand(ACTION_SETUP_LAYOUT);
+
           /* log */
         JMenuItem logSetup = new JMenuItem("Log");
         logSetup.setMnemonic(KeyEvent.VK_L);
@@ -70,6 +84,7 @@ public class SPTMenuBar extends JMenuBar implements ActionListener {
         serialPortSetup.setActionCommand(ACTION_SETUP_SERIALPORT);
 
         setupMenu.add(styleSetup);
+        setupMenu.add(layoutSetup);
         setupMenu.add(logSetup);
         setupMenu.add(serialPortSetup);
 
@@ -77,12 +92,18 @@ public class SPTMenuBar extends JMenuBar implements ActionListener {
         JMenu toolsMenu = new JMenu("Tools");
         toolsMenu.setMnemonic(KeyEvent.VK_O);
           /* ttl macro */
-        JMenuItem ttlMacroSetup = new JMenuItem("Teraterm macro");
-        ttlMacroSetup.setMnemonic(KeyEvent.VK_M);
+        JMenuItem ttlMacroSetup = new JMenuItem("Teraterm macro setting");
+        //ttlMacroSetup.setMnemonic(KeyEvent.VK_R);
         ttlMacroSetup.addActionListener(this);
-        ttlMacroSetup.setActionCommand(ACTION_TTLMACRO);
+        ttlMacroSetup.setActionCommand(ACTION_TTLMACRO_REGISTER);
+
+        JMenuItem ttlMacroExe = new JMenuItem("Teraterm macro execute");
+        ttlMacroExe.setMnemonic(KeyEvent.VK_M);
+        ttlMacroExe.addActionListener(this);
+        ttlMacroExe.setActionCommand(ACTION_TTLMACRO_EXE);
 
         toolsMenu.add(ttlMacroSetup);
+        toolsMenu.add(ttlMacroExe);
 
         /* MENU: Plugins */
         Iterator<MenuItemPlugin> it = MyUtils.loadPlugins(MenuItemPlugin.class);
@@ -91,9 +112,7 @@ public class SPTMenuBar extends JMenuBar implements ActionListener {
         while (it.hasNext()) {
             MenuItemPlugin menuItemPlugin = it.next();
             System.out.println("Found menuItemPlugin: " + menuItemPlugin.getText());
-            /* ttl macro */
-            JMenuItem pluginMenuItem = new JMenuItem(menuItemPlugin.getText());
-            pluginMenuItem.addActionListener(menuItemPlugin);
+            JMenuItem pluginMenuItem = menuItemPlugin.createJMenuItemInstance();
             pluginsMenu.add(pluginMenuItem);
         }
 
@@ -128,33 +147,76 @@ public class SPTMenuBar extends JMenuBar implements ActionListener {
                 break;
             case ACTION_SETUP_STYLE:
                 StyleConfigDialog styleConfigDialog = new StyleConfigDialog(frame);
-                styleConfigDialog.setLocationRelativeTo(frame);
-                styleConfigDialog.setVisible(true);
+                styleConfigDialog.showDialog();
+                break;
+            case ACTION_SETUP_LAYOUT:
+                LayoutConfigDialog layoutConfigDialog = new LayoutConfigDialog(frame);
+                layoutConfigDialog.showDialog();
+                if (layoutConfigDialog.getOption() == LayoutConfigDialog.OPTION_OK) {
+                    frame.updateLayout();
+                }
                 break;
             case ACTION_SETUP_LOG:
                 LogConfigDialog logConfigDialog = new LogConfigDialog(frame);
-                logConfigDialog.setLocationRelativeTo(frame);
-                logConfigDialog.setVisible(true);
+                logConfigDialog.showDialog();
                 break;
             case ACTION_SETUP_SERIALPORT:
                 SerialPortConfigDialog spConfigDialog = new SerialPortConfigDialog();
-                //spConfigDialog.setLocationRelativeTo(null);  // show dialong at Center of PC's window
-                spConfigDialog.setLocationRelativeTo(frame);  // show dialong at Center of |frame|
-                spConfigDialog.setVisible(true);
+                spConfigDialog.showDialog();
                 break;
-            case ACTION_TTLMACRO:
+            case ACTION_TTLMACRO_REGISTER:
                 TTLMacroConfigDialog ttlMacroConfigDialog = new TTLMacroConfigDialog(frame);
-                ttlMacroConfigDialog.setLocationRelativeTo(frame);
-                ttlMacroConfigDialog.setVisible(true);
+                ttlMacroConfigDialog.showDialog();
+                break;
+            case ACTION_TTLMACRO_EXE:
+                executeTTLMacro();
                 break;
             case ACTION_ABOUT:
                 VersionDialog versionDialog = new VersionDialog(frame);
-                versionDialog.setLocationRelativeTo(frame);
-                versionDialog.setVisible(true);
+                versionDialog.showDialog();
                 break;
             default:
                 System.out.println("Action " + action + " not handled!");
                 break;
         }
     }
+
+    private void executeTTLMacro() {
+        JFileChooser fileChooser = new JFileChooser();
+        FileFilter ttlFileFilter = new FileNameExtensionFilter("TTL Macro file", "ttl");
+        fileChooser.addChoosableFileFilter(ttlFileFilter);
+        fileChooser.setFileFilter(ttlFileFilter);
+        int selected = fileChooser.showOpenDialog(SPTerminal.getFrame());
+
+        if (selected == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            if (checkFile(file)) {
+                String fileName = file.getName();
+                String filePath = file.getAbsolutePath();
+                System.out.println("TTL Macro exe " + fileName + " selected.");
+                SerialPortTX portTX = SPTerminal.getSerialPortManager().getPortTX();
+                if (portTX != null) {
+                    // Run another thread for TTL Macro.
+                    TTLMacroExecutor ttlMacroExecutor = new TTLMacroExecutor(filePath, portTX);
+                    ttlMacroExecutor.start();
+                } else {
+                    JOptionPane.showMessageDialog(this, "[Error] port is not connected yet");
+                }
+            } else {
+                System.out.println("file cannot be executed");
+            }
+        } else {
+            System.out.println("TTL Macro exe cancel");
+        }
+    }
+
+    private boolean checkFile(File file) {
+        if (file.exists()) {
+            if (file.isFile() && file.canRead()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

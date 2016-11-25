@@ -1,9 +1,6 @@
 package com.corochann.spterminal.ui;
 
-import com.corochann.spterminal.config.LogConfig;
-import com.corochann.spterminal.config.ProjectConfig;
-import com.corochann.spterminal.config.SPTerminalPreference;
-import com.corochann.spterminal.config.SerialPortConfig;
+import com.corochann.spterminal.config.*;
 import com.corochann.spterminal.config.style.StyleConfig;
 import com.corochann.spterminal.log.MyAnsiLogger;
 import com.corochann.spterminal.log.MyLogger;
@@ -52,6 +49,7 @@ public class SPTerminal extends JFrame implements ActionListener {
     private MyLogger mLogger = null;
     private MyAnsiLogger mAnsiLogger = null;
     private static SPTerminalPreference mPreference;
+    private static LayoutConfig mLayoutConfig;
 
     /*--- Attributes ---*/
     private static SPTerminal frame;
@@ -105,6 +103,7 @@ public class SPTerminal extends JFrame implements ActionListener {
     private static int initialSetup() {
         /*--- folder init ---*/
         mPreference = SPTerminalPreference.getInstance();
+        mLayoutConfig = mPreference.getLayoutConfig();
         int ret = -1;
         try {
             // Prepare necessary folders
@@ -124,6 +123,7 @@ public class SPTerminal extends JFrame implements ActionListener {
 
     /** Exit SPTerminal */
     private int Finalize() {
+        System.out.println("Finalize SPTerminal...");
         int ret = -1;
         if (mTerminalPanel != null) {
             mTerminalPanel.Finalize();
@@ -140,6 +140,9 @@ public class SPTerminal extends JFrame implements ActionListener {
         if (mAnsiLogger != null) {
             mAnsiLogger.Finalize();
             mAnsiLogger = null;
+        }
+        if (mPreference != null) {
+            mPreference.Finalize();
         }
         ret = 0;
         return ret;
@@ -169,11 +172,31 @@ public class SPTerminal extends JFrame implements ActionListener {
         });
 
         //frame.setBounds(50, 50, 1300, 800);
+        frame.addComponentListener(frame.new FrameResizeListener());
         frame.pack(); // Instead of specify size absolute value, it makes frame "packed".
         frame.setLocationRelativeTo(null); // Launch Frame at the center of Window.
         frame.setTitle(APP_TITLE);
         //frame.setIconImage(logo.getImage());
+
+        frame.updateLayout();
         frame.setVisible(true);
+    }
+
+    public void updateLayout() {
+        System.out.println("updateLayout");
+        System.out.println("w = " + mLayoutConfig.getFrameWidth() + ", h = " + mLayoutConfig.getFrameHeight());
+        //frame.setPreferredSize(new Dimension(mLayoutConfig.getFrameWidth(), mLayoutConfig.getFrameHeight()));
+        //frame.setSize(2000, 199);
+        frame.setSize(new Dimension(mLayoutConfig.getFrameWidth(), mLayoutConfig.getFrameHeight()));
+        // invoke after setSize done.
+        if (mTerminalPanel != null) SwingUtilities.invokeLater(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        mTerminalPanel.updateLayout();
+                    }
+                }
+        );
     }
 
     private static void setupUIDefaults() {
@@ -495,5 +518,22 @@ public class SPTerminal extends JFrame implements ActionListener {
         return mAnsiLogger;
     }
 
+    /*--- INNER CLASS ---*/
+    class FrameResizeListener extends ComponentAdapter {
+        public void componentResized(ComponentEvent e) {
+            //Recalculate the variable you mentioned
+            Component cmp = e.getComponent();
+            //System.out.println("FrameResizeListener X = " + cmp.getX()
+            //        + ", Y = " + cmp.getY()
+            //        + ", w = " + cmp.getWidth()
+            //        + ", h = " + cmp.getHeight()
+            //);
+            mTerminalPanel.onFrameComponentResize(e);
+            if (mLayoutConfig.isAutoUpdate()) {
+                mLayoutConfig.setFrameWidth(cmp.getWidth());
+                mLayoutConfig.setFrameHeight(cmp.getHeight());
+            }
+        }
+    }
 }
 

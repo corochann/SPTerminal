@@ -3,16 +3,20 @@ package com.corochann.spterminal.ui.component;
 import javax.swing.*;
 import javax.swing.text.*;
 import java.awt.*;
+import java.util.Vector;
 
 /**
  * JTextPane with extended feature that one line of background can be highlighted
  * Note: use {#repaint()} to update the graphics after setHighlightLine() call. (App-triggered painting)
  */
-public class HighlightableJTextPane extends JTextPane {
+public class HighlightableJTextPane extends CustomJTextPane {
     private static final int TAB_STOP_SIZE = 100;
 
-    /** The line to be highlighted. -1 indicates that no line should be highlighted. */
-    private int highlightLine = -1;
+    ///** The line to be highlighted. -1 indicates that no line should be highlighted. */
+    //private int highlightLine = -1;
+    /** The lines to be highlighted. empty vector indicates that no line should be highlighted. */
+    private Vector<Integer> highlightLineVec = new Vector<>();
+
     /**
      * Highlight highlightColor
      * Color's alpha must be low value, in order to show text behind.
@@ -23,11 +27,22 @@ public class HighlightableJTextPane extends JTextPane {
         super();
     }
 
-    /** Update line to be highlighted. It supports only one line highlighting
+    /**
+     * Update line to be highlighted. It supports only one line highlighting
      * Note: line is 0-indexed.
      */
     public void setHighlightLine(int line) {
-        highlightLine = line;
+        //highlightLine = line;
+        highlightLineVec.removeAllElements();
+        addHightlightLine(line);
+    }
+
+    /**
+     * Update line to be highlighted. It supports multiline highlighting
+     * Note: line is 0-indexed.
+     */
+    public void addHightlightLine(int line) {
+        highlightLineVec.add(line);
     }
 
     /**
@@ -41,7 +56,9 @@ public class HighlightableJTextPane extends JTextPane {
     public void paint(Graphics g) {
         //System.out.println("execute paint with highlinetLine = " + highlightLine);
         super.paint(g);
-        highlightLine(g, highlightLine);
+        for (Integer line : highlightLineVec) {
+            highlightLine(g, line);
+        }
     }
 
     private void highlightLine(Graphics g, int line) {

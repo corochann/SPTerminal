@@ -43,6 +43,10 @@ public class TTLMacroConfigDialog extends JDialog implements ActionListener {
     }
 
     public TTLMacroConfigDialog(Frame owner, String commandTextAreaText) {
+        this(owner, commandTextAreaText, "");
+    }
+
+    public TTLMacroConfigDialog(Frame owner, String commandTextAreaText, String ttlFileName) {
         super(owner, ModalityType.APPLICATION_MODAL);
         this.setTitle("Teraterm macro setup");
         StyleSelectorConfig styleSelectorConfig = SPTerminalPreference.getInstance().getStyleSelectorConfig();
@@ -82,7 +86,7 @@ public class TTLMacroConfigDialog extends JDialog implements ActionListener {
         /* 2-1: fileName */
         JPanel fileNamePanel = new JPanel();
         JLabel fileNameLabel = new JLabel("File name");
-        fileNameTextField = new CustomJTextField();
+        fileNameTextField = new CustomJTextField(ttlFileName);
         fileNameTextField.setPreferredWidth(preferredTextWidth);
 
         fileNamePanel.add(fileNameLabel);
@@ -132,6 +136,11 @@ public class TTLMacroConfigDialog extends JDialog implements ActionListener {
         this.pack();
     }
 
+    public void showDialog() {
+        setLocationRelativeTo(getOwner());
+        setVisible(true);
+    }
+
     private Vector<String> constructTTLListData() {
         Vector<String> listData = new Vector<>();
         for (Map.Entry<String, String> e : ttlMacroConfig.ttlMacroMap.entrySet()) {
@@ -158,7 +167,7 @@ public class TTLMacroConfigDialog extends JDialog implements ActionListener {
                     TTLMacro ttlMacro = new TTLMacro();
                     ttlMacro.setFileName(fileNameTextField.getText());
                     ttlMacro.setCommand(commandTextArea.getText());
-                    saveNewTTLMacro(ttlMacro);
+                     saveNewTTLMacro(ttlMacro);
                     //String styleName = ((String) styleNameComboBox.getSelectedItem());
                     //saveStyleSelectorConfig(styleName);
                 } else {
@@ -187,7 +196,12 @@ public class TTLMacroConfigDialog extends JDialog implements ActionListener {
         }
     }
 
-    private void saveNewTTLMacro(TTLMacro ttlMacro) {
+    /**
+     *
+     * @param ttlMacro
+     * @return false when save fails. true when save success
+     */
+    private boolean saveNewTTLMacro(TTLMacro ttlMacro) {
         // Check key is already existing or not
         String aliasKey = TTLMacroConfig.constructKey(ttlMacro.getFileName());
         if (ttlMacroConfig.ttlMacroMap.containsKey(aliasKey)) {
@@ -202,7 +216,9 @@ public class TTLMacroConfigDialog extends JDialog implements ActionListener {
         } catch (TTLMacro.FormatErrorException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Save failed, some parameter is not proper.");
+            return false;
         }
+        return true;
     }
 
     private void deleteTTLMacro(String aliasKey) {
@@ -217,9 +233,9 @@ public class TTLMacroConfigDialog extends JDialog implements ActionListener {
      * @param aliasKey
      * @param ttlMacro
      */
-    private void updateTTLMacro(String aliasKey, TTLMacro ttlMacro) {
+    private boolean updateTTLMacro(String aliasKey, TTLMacro ttlMacro) {
         deleteTTLMacro(aliasKey);
-        saveNewTTLMacro(ttlMacro);
+        return saveNewTTLMacro(ttlMacro);
         //TODO: Currently if save fails, file is already deleted so nothing will remain.
         // Better spec is to confirm save succeed and then delete file if aliasName is different from new name.
     }

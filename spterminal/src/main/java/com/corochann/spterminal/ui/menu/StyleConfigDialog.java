@@ -63,6 +63,11 @@ public class StyleConfigDialog extends JDialog implements ActionListener {
         this.pack();
     }
 
+    public void showDialog() {
+        setLocationRelativeTo(this.getOwner());
+        setVisible(true);
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
         String action = e.getActionCommand();

@@ -18,6 +18,7 @@ public class SPTerminalPreference {
     /*--- Attributes ---*/
     private SerialPortConfig mSerialPortConfig = null;
     private LogConfig mLogConfig = null;
+    private LayoutConfig mLayoutConfig = null;
     private StyleSelectorConfig mStyleSelectorConfig = null;
     private TTLMacroConfig mTTLMacroConfig = null;
     private FilterConfig mFilterConfig = null;
@@ -41,7 +42,7 @@ public class SPTerminalPreference {
 
     /** Finalization */
     public void Finalize() {
-        savePreference();
+        savePreference(); // Should we save anytime? or save should be done separately??
         uniqueInstance = null;
     }
 
@@ -51,6 +52,10 @@ public class SPTerminalPreference {
 
     public LogConfig getLogConfig() {
         return mLogConfig;
+    }
+
+    public LayoutConfig getLayoutConfig() {
+        return mLayoutConfig;
     }
 
     public StyleSelectorConfig getStyleSelectorConfig() {
@@ -71,6 +76,7 @@ public class SPTerminalPreference {
     public synchronized void loadPreference() {
         mSerialPortConfig = SerialPortConfig.load();
         mLogConfig = LogConfig.load();
+        mLayoutConfig = LayoutConfig.load();
         mStyleSelectorConfig = StyleSelectorConfig.load();
         mTTLMacroConfig = TTLMacroConfig.load();
         mFilterConfig = FilterConfig.load();
@@ -82,6 +88,7 @@ public class SPTerminalPreference {
     public synchronized void savePreference() {
         mSerialPortConfig.save();
         mLogConfig.save();
+        mLayoutConfig.save();
         mStyleSelectorConfig.save();
         // mTTLMacroConfig save is done by each TTLMacro independently
         // mFilterConfig save is done by each FilterRule independently

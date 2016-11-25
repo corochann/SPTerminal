@@ -1,8 +1,10 @@
 package com.corochann.spterminal.teraterm;
 
 import com.corochann.spterminal.serial.SerialPortTX;
+import com.corochann.spterminal.ui.SPTerminal;
 import com.corochann.spterminal.util.MyUtils;
 
+import javax.swing.*;
 import java.io.*;
 import java.util.List;
 
@@ -119,8 +121,11 @@ public class TTLMacroExecutor extends Thread {
                 case "restoresetup":
                 case "scprecv":
                 case "scpsend":
+                    commandNotSupported(command);
+                    break;
                 case "send":
                     ttlSend(args);
+                    break;
                 case "sendbreak":
                 case "sendbroadcast":
                 case "sendfile":
@@ -351,5 +356,12 @@ public class TTLMacroExecutor extends Thread {
     private void commandNotSupported(String command) {
         System.out.println("[WARNING] " + command + " not supported yet, it will be ignored");
         //TODO: notify user in GUI (user cannot see terminal log)
+        final String unsupportedCommand = command;
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                JOptionPane.showMessageDialog(SPTerminal.getFrame(), unsupportedCommand + " not supported yet, it will be ignored");
+            }
+        });
     }
 }

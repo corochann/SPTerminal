@@ -21,15 +21,16 @@ public class AutoScrollJScrollPane extends JScrollPane {
 
         final JScrollBar verticalScrollBar = getVerticalScrollBar();
         // Same effect with TextArea's setLineWrap(true);
-        setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        //setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         getVerticalScrollBar().addAdjustmentListener(new AdjustmentListener() {
             BoundedRangeModel brm = verticalScrollBar.getModel();
             @Override
             public void adjustmentValueChanged(AdjustmentEvent e) {
                 // Invoked when user select and move the cursor of scroll by mouse explicitly.
                 if (!brm.getValueIsAdjusting()) {
-                    view.setPreferredSize(new Dimension(view.getWidth(), view.getHeight() + verticalScrollBar.getVisibleAmount()));
-                    view.setMinimumSize(new Dimension(view.getWidth(), view.getPreferredSize().height + verticalScrollBar.getVisibleAmount()));
+                    //view.setPreferredSize(new Dimension(view.getWidth(), view.getHeight() + verticalScrollBar.getVisibleAmount()));
+                    //view.setMinimumSize(new Dimension(view.getWidth(), view.getPreferredSize().height + verticalScrollBar.getVisibleAmount()));
                     //System.out.println("[DEBUG] mRXTextPane.getWidth() = " + mRXTextPane.getWidth()
                     //        + ", height = " + mRXTextPane.getHeight()
                     //        + ", extent = " + inputStreamVerticalScrollBar.getVisibleAmount()

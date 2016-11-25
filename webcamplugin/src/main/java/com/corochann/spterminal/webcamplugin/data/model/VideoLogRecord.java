@@ -1,8 +1,8 @@
-package com.corochann.spterminal.data.model;
+package com.corochann.spterminal.webcamplugin.data.model;
 
-import com.corochann.spterminal.config.ProjectConfig;
 import com.corochann.spterminal.util.MyUtils;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.Serializable;
 
@@ -14,6 +14,8 @@ public class VideoLogRecord implements Serializable {
     private String videoFilename = "";
     private long videoStartTime = 0L;
     private String logFilename = "";
+    private transient String parentFilePath = "";
+
 
     /*--- Constructor ---*/
     public VideoLogRecord() {
@@ -57,7 +59,13 @@ public class VideoLogRecord implements Serializable {
         //String path = constructPath(parentDirPath);
         VideoLogRecord record;
         try {
-            record = (VideoLogRecord)MyUtils.readFromXML(path);
+            System.out.println("VideoLogRecord load " + path);
+            Object obj = MyUtils.readFromXML(path, VideoLogRecord.class);
+            System.out.println("casting...");
+            record = (VideoLogRecord) obj;
+            System.out.println("VideoLogRecord record = " + record);
+            record.parentFilePath = new File(path).getParentFile().getAbsolutePath();
+            System.out.println("record.parentFilePath =" +  record.parentFilePath);
         } catch (FileNotFoundException e) {
             //e.printStackTrace();
             System.out.println(path + " not found, return null");
@@ -95,6 +103,13 @@ public class VideoLogRecord implements Serializable {
         this.logFilename = logFilename;
     }
 
+    public String getVideoFilePath() {
+        return parentFilePath + "/" + getVideoFilename();
+    }
+
+    public String getLogFilePath() {
+        return parentFilePath + "/" + getLogFilename();
+    }
     /*--- Exception definition ---*/
     public static class FormatErrorException extends Exception {
 

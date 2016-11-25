@@ -1,6 +1,8 @@
 package com.corochann.spterminal.ui;
 
 import com.corochann.spterminal.config.FilterConfig;
+import com.corochann.spterminal.config.LayoutConfig;
+import com.corochann.spterminal.config.ProjectConfig;
 import com.corochann.spterminal.config.SPTerminalPreference;
 import com.corochann.spterminal.config.style.StyleConfig;
 import com.corochann.spterminal.config.teraterm.TTLMacroConfig;
@@ -13,6 +15,7 @@ import com.corochann.spterminal.teraterm.TTLMacroExecutor;
 import com.corochann.spterminal.ui.component.*;
 import com.corochann.spterminal.ui.menu.FilterConfigDialog;
 import com.corochann.spterminal.ui.menu.RXTextPopupMenu;
+import com.corochann.spterminal.ui.menu.TTLMacroConfigDialog;
 import com.corochann.spterminal.util.MyUtils;
 
 import javax.swing.*;
@@ -26,11 +29,16 @@ import javax.swing.text.*;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
+import java.awt.dnd.DropTarget;
 import java.awt.event.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Vector;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.util.*;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -40,7 +48,7 @@ import static com.corochann.spterminal.ui.SPTerminal.*;
 /**
  *
  */
-public class TerminalPanel extends JPanel implements ActionListener {
+public class TerminalPanel extends DropPanel implements ActionListener {
     /* Constants */
     public static final int FLUSH_WITH_DELAY_MILLIS = 300;
 
@@ -84,6 +92,7 @@ public class TerminalPanel extends JPanel implements ActionListener {
     private SerialPortRX portRX = null;
 
     /* Attribute */
+    private boolean dragOver = false;
     // UI
     private final AnsiJTextPane mRXTextPane;
     private final AnsiJTextPane mRXFilteredTextPane;
@@ -112,6 +121,7 @@ public class TerminalPanel extends JPanel implements ActionListener {
     private final Color charHighlightColor;
     private TTLMacroConfig ttlMacroConfig;
     private FilterConfig filterConfig;
+    private LayoutConfig layoutConfig;
     private int findCurrentPos = 0;
     private final AutoScrollJScrollPane mInputStreamScrollPane;
     private final AutoScrollJScrollPane mInputStreamFilteredScrollPane;
@@ -119,20 +129,41 @@ public class TerminalPanel extends JPanel implements ActionListener {
     private String currentFilterRuleName;
     private FilterRule currentFilterRule;
     private FilterCountTableModel currentFilterTableModel;
+    private final JSplitPane terminalSplitPane;
+    private final JSplitPane rightVerticalSplitPane;
 
+    private int rightSideWidth = -1; // -1 is INVALID value, meaning that frame is not initialized yet.
 
     TerminalPanel() {
         super(new BorderLayout());
         ttlMacroConfig = SPTerminalPreference.getInstance().getTTLMacroConfig();
         filterConfig = SPTerminalPreference.getInstance().getFilterConfig();
+        layoutConfig = SPTerminalPreference.getInstance().getLayoutConfig();
         StyleConfig styleConfig = SPTerminalPreference.getInstance().getStyleSelectorConfig().getStyleConfig();
         defaultForeGroundColor = styleConfig.getBaseForeGroundColor() == null ?
                 Color.BLACK : styleConfig.getBaseForeGroundColor();
         charHighlightColor = styleConfig.getCharHighlightColor();
 
 
-        JSplitPane terminalSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
+        terminalSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
         terminalSplitPane.setDividerSize(5);  // Default value 10
+        System.out.println("terminalSP.setDividerLocation()");
+        terminalSplitPane.setDividerLocation(layoutConfig.getTerminalSplitPaneLocation());
+        terminalSplitPane.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY,
+                new PropertyChangeListener() {
+                    @Override
+                    public void propertyChange(PropertyChangeEvent evt) {
+                        //System.out.println("terminalSplitPane propertyChange name = "+ evt.getPropertyName() +
+                        //        ", old = " + evt.getOldValue() +
+                        //        ", new = "+ evt.getNewValue());
+                        int location = (int)evt.getNewValue();
+                        if (layoutConfig.isAutoUpdate()) {
+                            layoutConfig.setTerminalSplitPaneLocation(location);
+                        }
+                        rightSideWidth = getFrame().getWidth() - location;
+                        //System.out.println("rightSideWidth = " + rightSideWidth);
+                    }
+                });
         /* |terminalSplitPanel| contains terminalLeftPanel and terminalRight  */
         JPanel terminalLeftPanel = new JPanel();
         terminalLeftPanel.setLayout(new BoxLayout(terminalLeftPanel, BoxLayout.Y_AXIS));
@@ -143,11 +174,15 @@ public class TerminalPanel extends JPanel implements ActionListener {
 
         /*--- LEFT Panel ---*/
         mRXTextPane = new AnsiJTextPane(styleConfig);
-        mInputStreamScrollPane = new AutoScrollJScrollPane(mRXTextPane);
+        JPanel noWrapRXPanel = new JPanel(new BorderLayout());
+        noWrapRXPanel.add(mRXTextPane);
+        mInputStreamScrollPane = new AutoScrollJScrollPane(noWrapRXPanel);
         setupRXTextPane(mRXTextPane, mInputStreamScrollPane);
 
         mRXFilteredTextPane = new AnsiJTextPane(styleConfig);
-        mInputStreamFilteredScrollPane = new AutoScrollJScrollPane(mRXFilteredTextPane);
+        JPanel noWrapRXFilteredPanel = new JPanel(new BorderLayout());
+        noWrapRXFilteredPanel.add(mRXFilteredTextPane);
+        mInputStreamFilteredScrollPane = new AutoScrollJScrollPane(noWrapRXFilteredPanel);
         setupRXTextPane(mRXFilteredTextPane, mInputStreamFilteredScrollPane);
         //mRXFilteredTextPane.setVisible(false);  // default to invisible
         ((AbstractDocument) mRXFilteredTextPane.getDocument()).setDocumentFilter(new FilteredTextPaneDocumentFilter()); // Document handling logic
@@ -228,12 +263,13 @@ public class TerminalPanel extends JPanel implements ActionListener {
         /* 2. TXTextPane for suggesting command */
         mTXTextPane = new HighlightableJTextPane();
         mTXTextPane.setEditable(false);
+        mTXTextPane.setWrapText(false);
         if (styleConfig.getLineHighlightColor() != null) {
             mTXTextPane.setHighlightColor(styleConfig.getLineHighlightColor());
         }
-
-        //mTXTextPane.setLineWrap(false);
-        JScrollPane outputStreamScrollPane = new JScrollPane(mTXTextPane);
+        JPanel noWrapTXPanel = new JPanel(new BorderLayout());
+        noWrapTXPanel.add(mTXTextPane);
+        JScrollPane outputStreamScrollPane = new JScrollPane(noWrapTXPanel);
         outputStreamScrollPane.setPreferredSize(new Dimension(RIGHT_PANEL_WIDTH, 400));
 
         /* 3. filterPanel for log filtering feature */
@@ -364,15 +400,27 @@ public class TerminalPanel extends JPanel implements ActionListener {
         filterSP.setPreferredSize(new Dimension(RIGHT_PANEL_WIDTH, 100));
 
         /* rightVerticalSplitPane handles layout size of 2. and 3. */
-        JSplitPane rightVerticalSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
+        rightVerticalSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
                 true,
                 outputStreamScrollPane,
                 filterPanel);
                 //filterSP);
         rightVerticalSplitPane.setOneTouchExpandable(true);
         rightVerticalSplitPane.setDividerSize(10);
-        rightVerticalSplitPane.setDividerLocation(0.8);
-        //rightVerticalSplitPane.setDividerLocation(600);
+        rightVerticalSplitPane.setDividerLocation(layoutConfig.getRightVerticalSplitPaneLocation());
+        rightVerticalSplitPane.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY,
+                new PropertyChangeListener() {
+                    @Override
+                    public void propertyChange(PropertyChangeEvent evt) {
+                        //System.out.println("rightVerticalSplitPane propertyChange name = "+ evt.getPropertyName() +
+                        //        ", old = " + evt.getOldValue() +
+                        //        ", new = "+ evt.getNewValue());
+                        int location = (int)evt.getNewValue();
+                        if (layoutConfig.isAutoUpdate()) {
+                            layoutConfig.setRightVerticalSplitPaneLocation(location);
+                        }
+                    }
+                });
 
         mTXTextField.setAlignmentX(Component.LEFT_ALIGNMENT);
         rightVerticalSplitPane.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -403,15 +451,81 @@ public class TerminalPanel extends JPanel implements ActionListener {
         /* final layout */
         //this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
+        /* Drag & drop handling */
+        TTLMacroFilesDroppedListener listener = new TTLMacroFilesDroppedListener();
+
+        //this.setOnFilesDroppedListener(listener);
+        mRXTextPane.setOnFilesDroppedListener(listener);
+        mRXTextPane.setOnFilesDroppedListener(listener);
+
         this.add(terminalSplitPane);
         notifyViewStateChanged(VIEW_STATE_MAIN_LOG, null);
+    }
+
+    /** Update layout according to the LayoutConfig */
+    public void updateLayout() {
+        terminalSplitPane.setDividerLocation(layoutConfig.getTerminalSplitPaneLocation());
+        rightVerticalSplitPane.setDividerLocation(layoutConfig.getRightVerticalSplitPaneLocation());
+        rightSideWidth = getFrame().getWidth() - layoutConfig.getTerminalSplitPaneLocation(); // make sure to update rightSideWidth
+    }
+
+    class TTLMacroFilesDroppedListener implements AnsiJTextPane.FileDroppedListener {
+        @Override
+        public void onFilesDropped(List<File> files) {
+            String messageStr = "Dropped " + files.size() + " files\n";
+            for (int i = 0; i < files.size(); i++) {
+                File file = files.get(i);
+                messageStr += file.getName() + "\n";
+            }
+            System.out.println(messageStr);
+
+            if (files.size() == 1) {
+                File file = files.get(0);
+                String filePath = file.getAbsolutePath();
+                SerialPortTX portTX = SPTerminal.getSerialPortManager().getPortTX();
+                if (portTX != null) {
+                    if (MyUtils.getExtension(file).equals("ttl")) {
+                        // Confirm to execute or register not.
+                        TeratermMacroDnDConfirmDialog dialog = new TeratermMacroDnDConfirmDialog(getFrame(), file.getName());
+                        dialog.showDialog();
+                        switch (dialog.getOption()) {
+                            case TeratermMacroDnDConfirmDialog.OPTION_OK:  // JOptionPane.YES_OPTION is same
+                                // Run another thread for TTL Macro.
+                                TTLMacroExecutor ttlMacroExecutor = new TTLMacroExecutor(filePath, portTX);
+                                ttlMacroExecutor.start();
+                                break;
+                            case TeratermMacroDnDConfirmDialog.OPTION_REGISTER:
+                                try {
+                                    /* Launch TTLMacroConfigDialog */
+                                    SPTerminal frame = SPTerminal.getFrame();
+                                    TTLMacroConfigDialog ttlMacroConfigDialog = new TTLMacroConfigDialog(frame,
+                                            MyUtils.readFromFile(file.getAbsolutePath()),
+                                            MyUtils.getFileNameWithoutExtension(file));
+                                    ttlMacroConfigDialog.showDialog();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                                break;
+                            case TeratermMacroDnDConfirmDialog.OPTION_CANCEL:
+                            default:
+                                // Cancel operation, do nothing
+                                break;
+                        }
+                    } else {
+                        JOptionPane.showMessageDialog(getFrame(), "[Error] selected file is not teraterm macro");
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(getFrame(), "[Error] port is not connected yet");
+                }
+            } else {
+                JOptionPane.showMessageDialog(getFrame(), "[Error] Please drag & drop only 1 file");
+            }
+        }
     }
 
     class FilterCountTableModel extends DefaultTableModel {
         FilterCountTableModel(String[] columnNames, int rowNum) {
             super(columnNames, rowNum);
-
-
         }
 
         public FilterCountTableModel(Object[][] data, Object[] columnNames) {
@@ -453,7 +567,8 @@ public class TerminalPanel extends JPanel implements ActionListener {
      */
     private void setupRXTextPane(AnsiJTextPane textPane, AutoScrollJScrollPane scrollPane) {
         textPane.setEditable(false);
-        textPane.setPreferredSize(new Dimension(600, 400)); // width, height
+        textPane.setWrapText(false); // to show horizontal scroll bar to appear.
+        //textPane.setPreferredSize(new Dimension(600, 400)); // width, height
         textPane.addKeyListener(new RXTextPaneKeyListener());
         textPane.setVerticalScrollBar(scrollPane.getVerticalScrollBar());
         /*
@@ -724,6 +839,7 @@ public class TerminalPanel extends JPanel implements ActionListener {
                     System.out.println("Command: " + command);
                     mCH.insertCommand(command);
                 }
+                updateSuggestion();
                 break;
             /*--- findPanel ---*/
             case ACTION_FIND_NEXT:
@@ -947,11 +1063,13 @@ public class TerminalPanel extends JPanel implements ActionListener {
                 break;
             case STATE_CONNECTED:
                 mTXTextField.setEditable(true);
+                mTXTextField.requestFocus();
                 /* portTX & portRX should be ready now */
                 portName = SPTerminal.getSerialPortManager().getCurrentPortName();
                 portTX = SPTerminal.getSerialPortManager().getPortTX();
                 portRX = SPTerminal.getSerialPortManager().getPortRX();
                 mCH = CommandHistory.load(portName);
+                updateSuggestion();
                 break;
             default:
                 System.out.println("Unknown state: " + state);
@@ -1002,6 +1120,15 @@ public class TerminalPanel extends JPanel implements ActionListener {
 
         this.revalidate();
         this.repaint();
+    }
+
+    /** Called when owner's frame size has changed */
+    public void onFrameComponentResize(ComponentEvent e) {
+        // Want to keep Right side of SplitPane as same, and Left side size should change.
+        //System.out.println("onFrameComponentResize");
+        if (rightSideWidth >= 0) {
+            terminalSplitPane.setDividerLocation(getFrame().getWidth() - rightSideWidth);
+        }
     }
 
     private static void scrollToCenter(JTextComponent tc, int pos) throws BadLocationException {
@@ -1195,8 +1322,7 @@ public class TerminalPanel extends JPanel implements ActionListener {
                     case KeyEvent.VK_U:
                         portTX.transmitAscii(21); break;
                     case KeyEvent.VK_V:
-                        portTX.transmitAscii(22);
-                        //TODO: Reconfirm side-effect, paste function is assigned to C-V for now.
+                        //portTX.transmitAscii(22); //TODO: Reconfirm side-effect, paste function is assigned to C-V for now.
                         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
                         try {
                             String pasteText = (String) clipboard.getData(DataFlavor.stringFlavor);

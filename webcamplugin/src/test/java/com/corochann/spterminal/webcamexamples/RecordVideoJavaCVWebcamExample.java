@@ -1,4 +1,4 @@
-package com.corochann.webcamexamples;
+package com.corochann.spterminal.webcamexamples;
 
 import com.github.sarxos.webcam.Webcam;
 import com.github.sarxos.webcam.WebcamResolution;

@@ -129,6 +129,37 @@ public class MyUtils {
         return fileStr;
     }
 
+    /**
+     * Extracts extension of file in lower case
+     * Ref: http://www.javadrive.jp/tutorial/jfilechooser/index12.html
+     */
+    public static String getExtension(File f){
+        String ext = null;
+        String filename = f.getName();
+        int dotIndex = filename.lastIndexOf('.');
+
+        if ((dotIndex > 0) && (dotIndex < filename.length() - 1)){
+            ext = filename.substring(dotIndex + 1).toLowerCase();
+        }
+        return ext;
+    }
+
+    /**
+     * get file name without extension
+     * Ex 'abced.txt' -> 'abcde'
+     * @param f
+     * @return
+     */
+    public static String getFileNameWithoutExtension(File f){
+        String filename = f.getName();
+        int dotIndex = filename.lastIndexOf('.');
+
+        if ((dotIndex > 0) && (dotIndex < filename.length() - 1)){
+            filename = filename.substring(0, dotIndex).toLowerCase();
+        }
+        return filename;
+    }
+
     /*
      * XML Encoding/Decoding using java.beans.XMLEncoder, java.beans.XMLDecoder
      * Ref: http://www.rgagnon.com/javadetails/java-0470.html
@@ -140,11 +171,17 @@ public class MyUtils {
      * @throws FileNotFoundException
      */
     public static void writeToXML(Object obj, String filepath) throws FileNotFoundException {
+        ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
+        ClassLoader newLoader = obj.getClass().getClassLoader();
+        Thread.currentThread().setContextClassLoader(newLoader);
+
         XMLEncoder encoder = new XMLEncoder(
                 new BufferedOutputStream(new FileOutputStream(filepath))
         );
         encoder.writeObject(obj);
         encoder.close();
+
+        Thread.currentThread().setContextClassLoader(oldLoader);
     }
 
     /**
@@ -160,6 +197,21 @@ public class MyUtils {
         );
         Object obj = decoder.readObject();
         decoder.close();
+        return obj;
+    }
+
+    public static Object readFromXML(String filepath, Class className) throws FileNotFoundException {
+        ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
+        ClassLoader newLoader = className.getClassLoader();
+        Thread.currentThread().setContextClassLoader(newLoader);
+
+        XMLDecoder decoder = new XMLDecoder(
+                new BufferedInputStream(new FileInputStream(filepath))
+        );
+        Object obj = decoder.readObject();
+        decoder.close();
+
+        Thread.currentThread().setContextClassLoader(oldLoader);
         return obj;
     }
 

@@ -3,7 +3,7 @@ package com.corochann.spterminal.webcamplugin;
 import com.corochann.spterminal.config.ProjectConfig;
 import com.corochann.spterminal.config.SPTerminalPreference;
 import com.corochann.spterminal.config.style.StyleSelectorConfig;
-import com.corochann.spterminal.data.model.VideoLogRecord;
+import com.corochann.spterminal.webcamplugin.data.model.VideoLogRecord;
 import com.corochann.spterminal.log.MyAnsiLogger;
 import com.corochann.spterminal.serial.SerialPortRX;
 import com.corochann.spterminal.ui.SPTerminal;
@@ -18,12 +18,15 @@ import org.bytedeco.javacv.FFmpegFrameRecorder;
 import org.bytedeco.javacv.FrameRecorder;
 import org.bytedeco.javacv.Java2DFrameConverter;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
@@ -34,7 +37,9 @@ import java.util.Calendar;
 public class WebcamRecoderFrame extends JFrame implements ActionListener {
 
     /*--- CONSTANTS ---*/
+    public static final String SNAPSHOT_FOLDER_NAME = "snapshots";
     public static final String RECORD_LOG_FILENAME = "record_timestamp.log";
+    public static final String VIDEO_FILENAME = "video.mp4";
 
     /*--- Action definitions ---*/
     private static final String ACTION_RECORD_START = "recordstart";
@@ -81,7 +86,7 @@ public class WebcamRecoderFrame extends JFrame implements ActionListener {
         webcamPanel.setFPSDisplayed(true);
         webcamPanel.setDisplayDebugInfo(true);
         webcamPanel.setImageSizeDisplayed(true);
-        webcamPanel.setMirrored(true);
+        webcamPanel.setMirrored(false);
 
         /* 2nd row: control panel */
         JPanel controlPanel = new JPanel();
@@ -166,7 +171,8 @@ public class WebcamRecoderFrame extends JFrame implements ActionListener {
             recorderThread.stopRecord();
             try { /* videoLogRecord must be saved before releasing recorderThread */
                 VideoLogRecord videoLogRecord = new VideoLogRecord();
-                videoLogRecord.setVideoFilename(recorderThread.getVideoPath());
+                //videoLogRecord.setVideoFilename(recorderThread.getVideoPath());
+                videoLogRecord.setVideoFilename(VIDEO_FILENAME);
                 videoLogRecord.setVideoStartTime(recorderThread.getStartTime());
                 videoLogRecord.setLogFilename(RECORD_LOG_FILENAME);
                 videoLogRecord.save(recordDirPath);
@@ -187,6 +193,21 @@ public class WebcamRecoderFrame extends JFrame implements ActionListener {
         return recordDirPath;
     }
 
+    public synchronized void takeSnapshot() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
+        Calendar c = Calendar.getInstance();
+        String timeStr = sdf.format(c.getTime());
+        String snapshotDirPath = ProjectConfig.LOG_FOLDER + SNAPSHOT_FOLDER_NAME + "/";
+        MyUtils.prepareDir(snapshotDirPath);
+        try {
+            File file = new File(snapshotDirPath+"snapshot_"+timeStr+".jpg");
+            ImageIO.write(webcam.getImage(), "JPG", file);
+            System.out.format("Image for %s saved in %s \n", webcam.getName(), file);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+    }
+
     public synchronized void startRecord() {
         refreshRecoderThread();
 
@@ -203,6 +224,7 @@ public class WebcamRecoderFrame extends JFrame implements ActionListener {
             /* port is not connected, cannot take log.
              * Only take video record */
             //TODO: How to deal with this case?? defer now.
+            System.out.println("[WARNING] port is not connected! Do not record log.");
         }
         // record video
         recorderThread = new WebcamVideoRecorderThread(webcam, recordDirPath);
@@ -238,7 +260,8 @@ public class WebcamRecoderFrame extends JFrame implements ActionListener {
                 stopRecord();
                 break;
             case ACTION_SNAPSHOT:
-                // TODO: impl
+                System.out.println("Snapshot pressed");
+                takeSnapshot();
                 break;
             case ACTION_CANCEL:
                 System.out.println("Cancel pressed");
@@ -259,7 +282,6 @@ public class WebcamRecoderFrame extends JFrame implements ActionListener {
      * thread.stopRecord();
      */
     public static class WebcamVideoRecorderThread extends Thread {
-        public static final String VIDEO_FILE_PATH = "video.mp4";
         private static final int GOP_LENGTH_IN_FRAMES = 60;
         private final double frameRate = 10;
 
@@ -282,7 +304,7 @@ public class WebcamRecoderFrame extends JFrame implements ActionListener {
 
             double width = webcam.getViewSize().getWidth();
             double height = webcam.getViewSize().getHeight();
-            videoPath = dirPath + VIDEO_FILE_PATH;
+            videoPath = dirPath + VIDEO_FILENAME;
             // recorder setup
             recorder = new FFmpegFrameRecorder(videoPath, (int)width, (int)height, 2);
             recorder.setInterleaved(true);

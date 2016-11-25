@@ -6,7 +6,7 @@ tasks.withType(GroovyCompile)*.groovyOptions*.encoding = defaultEncoding
 allprojects {
     apply plugin: 'java'
     group = 'com.corochann'
-    version = '0.05'  // build version
+    version = '0.10'  // build version
     sourceCompatibility = 1.7
     targetCompatibility = 1.7
 }

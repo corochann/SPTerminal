@@ -22,7 +22,7 @@ public class ProjectConfig {
      * [History]
      * version 0.01: first version
      */
-    public static final String VERSION = "0.05";
+    public static final String VERSION = "0.10";
 
 
     // Application manifest
@@ -40,6 +40,7 @@ public class ProjectConfig {
 
     public static final String SERIAL_PORT_CONFIG_XML_PATH =  USER_FOLDER + "SerialPortConfig.xml";
     public static final String LOG_CONFIG_XML_PATH =  USER_FOLDER + "LogConfig.xml";
+    public static final String LAYOUT_CONFIG_XML_PATH =  USER_FOLDER + "LayoutConfig.xml";
     public static final String STYLE_SELECTOR_CONFIG_XML_PATH =  USER_FOLDER + "StyleConfigSelector.xml";
     /** The total path for color style xml file should be STYLE_CONFIG_PATH_PREFIX/color.xml */
     public static final String STYLE_CONFIG_PATH_PREFIX =  USER_FOLDER + "color/";

@@ -37,7 +37,7 @@ public class SerialPortConfigDialog extends JDialog implements ActionListener {
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
 
         JPanel gridPanel = new JPanel();
-        gridPanel.setLayout(new GridLayout(8, 2, 100, 30));  // row = 5, col = 2, hgap (px), vgap(px)
+        gridPanel.setLayout(new GridLayout(8, 2, 100, 30));  // row = 8, col = 2, hgap (px), vgap(px)
 
         /* create each component */
         baudrateComboBox = new JComboBox(SerialPortConfig.BAUDRATE_LIST);
@@ -96,6 +96,12 @@ public class SerialPortConfigDialog extends JDialog implements ActionListener {
         mainPanel.add(formButtonPanel);
         this.getContentPane().add(mainPanel);
         this.pack();
+    }
+
+    public void showDialog() {
+        //setLocationRelativeTo(null);  // show dialong at Center of PC's window
+        setLocationRelativeTo(getOwner());  // show dialong at Center of |frame|
+        setVisible(true);
     }
 
     @Override
